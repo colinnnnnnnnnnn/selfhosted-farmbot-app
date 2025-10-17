@@ -1,11 +1,11 @@
-#Instructions for backend
+# Instructions for backend
 
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python manage.py runserver
 
-#Instructions for frontend
+# Instructions for frontend
 
 cd frontend
 npm install
