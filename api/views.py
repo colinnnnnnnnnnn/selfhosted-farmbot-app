@@ -5,13 +5,17 @@ from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import render
-from .serializers import PositionSerializer, ServoAngleSerializer, MessageSerializer, LuaScriptSerializer
+from .serializers import (
+    PositionSerializer, ServoAngleSerializer, MessageSerializer, 
+    LuaScriptSerializer, WateringSerializer, DispensingSerializer,
+    ToolSerializer
+)
 from farmlib.wrapper import connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock
-from farmlib.wrapper import find_home, go_to_home, power_off, reboot, servo_angle, lua_script, get_position, send_message, take_photo
-from farmlib.wrapper import move_relative as fb_move_relative
+from farmlib.wrapper import (
+    find_home, go_to_home, power_off, reboot, servo_angle, lua_script, 
+    get_position, send_message, take_photo, water_plant, mount_tool, 
+    dismount_tool, dispense
+)
 import threading
 
 # Initialize bot connection when server starts
@@ -48,24 +52,6 @@ def login_view(request):
     token, _ = Token.objects.get_or_create(user=user)
     return Response({"token": token.key}, status=status.HTTP_200_OK)
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
-def social_auth_callback(request):
-    """Handle social authentication callback and return token"""
-    if request.user.is_authenticated:
-        token, _ = Token.objects.get_or_create(user=request.user)
-        return render(request, 'social_auth_callback.html', {
-            'token': token.key,
-            'user': {
-                'id': request.user.id,
-                'username': request.user.username,
-                'email': request.user.email
-            }
-        })
-    else:
-        return JsonResponse({'error': 'Authentication failed'}, status=401)
-
 @api_view(['POST'])
 def logout_view(request):
     try:
@@ -80,6 +66,8 @@ def me_view(request):
     return Response({"id": user.id, "username": user.username, "email": user.email}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def connect_view(request):
     """Connect to FarmBot"""
     try:
@@ -115,13 +103,14 @@ def move_relative_view(request):
     
     try:
         data = serializer.validated_data
-        fb_move_relative(data['x'], data['y'], data['z'], data.get('speed', 100))
+        move_relative(data['x'], data['y'], data['z'], data.get('speed', 100))
         return Response({"status": "moving"}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def emergency_lock_view(request):
     """Emergency lock FarmBot"""
     try:
@@ -164,6 +153,8 @@ def go_to_home_view(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def power_off_view(request):
     """Power off FarmBot"""
     try:
@@ -173,6 +164,8 @@ def power_off_view(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def reboot_view(request):
     """Reboot FarmBot"""
     try:
@@ -182,6 +175,8 @@ def reboot_view(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def servo_angle_view(request):
     """Set servo angle"""
     serializer = ServoAngleSerializer(data=request.data)
@@ -196,6 +191,8 @@ def servo_angle_view(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def lua_script_view(request):
     """Execute Lua script"""
     serializer = LuaScriptSerializer(data=request.data)
@@ -217,12 +214,14 @@ def get_position_view(request):
     try:
         position = get_position()
         if position is None:
-            return Response({"error": "Bot not connected"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response({"error": "Could not get position"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response(position, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def send_message_view(request):
     """Send message to FarmBot"""
     serializer = MessageSerializer(data=request.data)
@@ -233,6 +232,85 @@ def send_message_view(request):
         data = serializer.validated_data
         send_message(data['message'])
         return Response({"status": "message sent"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def mount_tool_view(request):
+    """Mount a specific tool"""
+    serializer = ToolSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = mount_tool(tool_name=data['tool_name'])
+        if success:
+            return Response({"status": "tool mounted"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to mount tool"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def dismount_tool_view(request):
+    """Dismount the current tool"""
+    try:
+        success = dismount_tool()
+        if success:
+            return Response({"status": "tool dismounted"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to dismount tool"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def water_plant_view(request):
+    """Move to position and water using FarmBot's built-in watering command"""
+    serializer = WateringSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = water_plant(
+            x=data.get('x', 6),
+            y=data.get('y', 600),
+            z=data.get('z', -340)
+        )
+        if success:
+            return Response({"status": "watering completed"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Watering failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def dispense_view(request):
+    """Dispense a specific amount of liquid"""
+    serializer = DispensingSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = dispense(
+            milliliters=data['milliliters'],
+            tool_name=data.get('tool_name'),
+            pin=data.get('pin')
+        )
+        if success:
+            return Response({"status": "dispensing completed"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Dispensing failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -259,52 +337,6 @@ def take_photo_view(request):
                 result['image'],
                 content_type=result['content_type']
             )
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-@authentication_classes([])
-def get_latest_photo_view(request):
-    """Get the latest photo from the farm_images folder"""
-    import os
-    import glob
-    from django.http import HttpResponse
-    
-    try:
-        # Get the farm_images directory path
-        farm_images_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'farm_images')
-        
-        # Find all image files
-        image_patterns = ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.bmp']
-        all_files = []
-        
-        for pattern in image_patterns:
-            files = glob.glob(os.path.join(farm_images_dir, pattern))
-            all_files.extend(files)
-        
-        if not all_files:
-            return Response({"error": "No photos found"}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Get the most recent file
-        latest_file = max(all_files, key=os.path.getctime)
-        
-        # Read and return the file
-        with open(latest_file, 'rb') as f:
-            image_data = f.read()
-        
-        # Determine content type
-        if latest_file.lower().endswith('.jpg') or latest_file.lower().endswith('.jpeg'):
-            content_type = 'image/jpeg'
-        elif latest_file.lower().endswith('.png'):
-            content_type = 'image/png'
-        elif latest_file.lower().endswith('.gif'):
-            content_type = 'image/gif'
-        else:
-            content_type = 'image/jpeg'  # default
-        
-        return HttpResponse(image_data, content_type=content_type)
-        
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

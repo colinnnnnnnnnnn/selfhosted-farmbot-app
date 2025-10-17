@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -43,6 +42,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
 
+    # CORS
+    'corsheaders',
+
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -53,14 +55,13 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
 
     'api',
-
-    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    # CORS middleware should be as high as possible
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -71,15 +72,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'farmbot_api.urls'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-]
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -154,8 +150,8 @@ AUTHENTICATION_BACKENDS = (
 )
 
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-# allauth deprecations: use ACCOUNT_LOGIN_METHODS and ACCOUNT_SIGNUP_FIELDS
-ACCOUNT_LOGIN_METHODS = { 'email', 'username' }
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_EMAIL_REQUIRED = False
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -166,39 +162,5 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Social Authentication Settings
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        },
-        'OAUTH_PKCE_ENABLED': True,
-    },
-    'github': {
-        'SCOPE': [
-            'user',
-            'email',
-        ],
-    }
-}
-
-# Allow social account signup
-SOCIALACCOUNT_AUTO_SIGNUP = True
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-
-# OAuth Provider Settings (optional - add credentials to enable)
-# SOCIALACCOUNT_PROVIDERS['google']['APP'] = {
-#     'client_id': os.getenv('GOOGLE_OAUTH2_CLIENT_ID', ''),
-#     'secret': os.getenv('GOOGLE_OAUTH2_CLIENT_SECRET', ''),
-# }
-
-# SOCIALACCOUNT_PROVIDERS['github']['APP'] = {
-#     'client_id': os.getenv('GITHUB_CLIENT_ID', ''),
-#     'secret': os.getenv('GITHUB_CLIENT_SECRET', ''),
-# }
+# CORS settings for development
+CORS_ALLOW_ALL_ORIGINS = True

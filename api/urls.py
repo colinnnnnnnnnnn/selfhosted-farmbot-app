@@ -4,8 +4,8 @@ from .views import (
     emergency_lock_view, emergency_unlock_view, find_home_view,
     go_to_home_view, power_off_view, reboot_view, servo_angle_view,
     lua_script_view, get_position_view, send_message_view, take_photo_view,
-    get_latest_photo_view, clear_photos_view, register_view, login_view, logout_view, me_view,
-    social_auth_callback
+    register_view, login_view, logout_view, me_view, water_plant_view,
+    mount_tool_view, dismount_tool_view, dispense_view, clear_photos_view
 )
 
 urlpatterns = [
@@ -13,7 +13,6 @@ urlpatterns = [
     path('auth/login/', login_view, name='auth-login'),
     path('auth/logout/', logout_view, name='auth-logout'),
     path('auth/me/', me_view, name='auth-me'),
-    path('auth/social-callback/', social_auth_callback, name='auth-social-callback'),
 
     path('connect/', connect_view, name='connect'),
     path('move-absolute/', move_absolute_view, name='move-absolute'),
@@ -29,6 +28,11 @@ urlpatterns = [
     path('position/', get_position_view, name='position'),
     path('send-message/', send_message_view, name='send-message'),
     path('take-photo/', take_photo_view, name='take-photo'),
-    path('get-latest-photo/', get_latest_photo_view, name='get-latest-photo'),
+    # Backwards-compatible alias used by the frontend
+    path('get-latest-photo/', take_photo_view, name='get_latest_photo'),
     path('clear-photos/', clear_photos_view, name='clear-photos'),
+    path('water-plant/', water_plant_view, name='water-plant'),
+    path('mount-tool/', mount_tool_view, name='mount-tool'),
+    path('dismount-tool/', dismount_tool_view, name='dismount-tool'),
+    path('dispense/', dispense_view, name='dispense'),
 ]

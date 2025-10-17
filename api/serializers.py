@@ -19,4 +19,15 @@ class MessageSerializer(serializers.Serializer):
 class PhotoSerializer(serializers.Serializer):
     url = serializers.URLField(read_only=True)
 
- 
+class WateringSerializer(serializers.Serializer):
+    x = serializers.IntegerField(required=False, default=6)
+    y = serializers.IntegerField(required=False, default=600)
+    z = serializers.IntegerField(required=False, default=-340)
+
+class DispensingSerializer(serializers.Serializer):
+    milliliters = serializers.FloatField(required=True, min_value=0.1)
+    tool_name = serializers.CharField(required=False)
+    pin = serializers.IntegerField(required=False)
+
+class ToolSerializer(serializers.Serializer):
+    tool_name = serializers.CharField(required=True)

@@ -1,6 +1,5 @@
 import paho.mqtt.client as mqtt
 from urllib.request import urlopen, Request
-from urllib.error import HTTPError
 import json
 import uuid
 
@@ -146,15 +145,9 @@ class FarmbotToken():
         data = {"user": {"email": email, "password": password}}
         string = json.dumps(data)
         as_bytes = str.encode(string)
-        try:
-            response = urlopen(req, as_bytes)
-            return response.read()
-        except HTTPError as e:
-            try:
-                detail = e.read().decode('utf-8')
-            except Exception:
-                detail = ''
-            raise Exception(f"Token fetch failed ({e.code}): {detail}")
+        response = urlopen(req, as_bytes)
+
+        return response.read()
 
     def __init__(self, raw_token):
         token_data = json.loads(raw_token)
@@ -241,10 +234,10 @@ class Farmbot():
         as an (x, y, z) tuple.
         """
         position = self.state["location_data"]["position"]
-        x = position["x"] if position["x"] is not None else 0.0
-        y = position["y"] if position["y"] is not None else 0.0
-        z = position["z"] if position["z"] is not None else 0.0
-        return (float(x), float(y), float(z))
+        x = position["x"] or -0.0
+        y = position["y"] or -0.0
+        z = position["z"] or -0.0
+        return (x, y, z)
 
     def _do_cs(self, kind, args, body=[]):
         """
