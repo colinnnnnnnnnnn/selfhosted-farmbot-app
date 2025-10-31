@@ -1,0 +1,37 @@
+\documentclass{utm_report}
+
+\usepackage[style=ieee,sorting=none]{biblatex}
+\usepackage{eso-pic}
+\usepackage{graphicx}
+\addbibresource{references.bib}
+
+% \usepackage{showframe}    % DEBUG: Show margins & frames
+
+\begin{document}
+
+\begin{titlepage}
+  \AddToShipoutPictureBG*{%
+    \includegraphics[width=\paperwidth,height=\paperheight]{img/titlepage.png}%
+  }
+  \null % ensures the page is not empty
+  \thispagestyle{empty}
+\end{titlepage}
+
+\include{chapters/1_abstract}
+
+\tableofcontents
+
+\clearpage
+
+\include{chapters/ch0_introduction}
+\include{chapters/ch1_domain_analysis}
+\include{chapters/ch3_system_design}
+\include{chapters/ch5_conclusion}
+
+\appendix
+\include{chapters/appendix_a}
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\printbibliography[title=Bibliography]
+
+\end{document}

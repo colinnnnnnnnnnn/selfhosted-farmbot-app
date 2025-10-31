@@ -1,0 +1,18 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n+nx}{reactorCoreTemp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mf}{0}\PYG{p}{;}
+\PYG{k+kd}{const}\PYG{+w}{ }\PYG{n+nx}{maxTemp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s+s2}{\PYGZdq{}9000\PYGZdq{}}\PYG{p}{;}
+\PYG{k+kd}{const}\PYG{+w}{ }\PYG{n+nx}{cooling}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kc}{true}\PYG{p}{;}
+
+\PYG{k+kd}{function}\PYG{+w}{ }\PYG{n+nx}{startReactor}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{n+nx}{reactorCoreTemp}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n+nx}{maxTemp}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n+nx}{reactorCoreTemp}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{n+nb}{Math}\PYG{p}{.}\PYG{n+nx}{random}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mf}{10}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n+nx}{cooling}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kc}{false}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{n+nx}{reactorCoreTemp}\PYG{+w}{ }\PYG{o}{\PYGZhy{}=}\PYG{+w}{ }\PYG{l+m+mf}{50}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{n+nx}{setTimeout}\PYG{p}{(}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{=\PYGZgt{}}\PYG{+w}{ }\PYG{n+nx}{console}\PYG{p}{.}\PYG{n+nx}{log}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}Core temp:\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nx}{reactorCoreTemp}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mf}{1000}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n+nx}{alert}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}Critical temperature reached! Initiate meltdown protocol.\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{n+nx}{startReactor}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\end{MintedVerbatim}

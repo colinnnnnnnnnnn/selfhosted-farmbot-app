@@ -1,0 +1,188 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global/global}
+    \entry{agtech2023}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=c6e717617eaab50ecad0cbbc22a24e49}{%
+           family={Johnson},
+           familyi={J\bibinitperiod},
+           given={Mary},
+           giveni={M\bibinitperiod}}}%
+        {{hash=5e20f446d2daa6c87a39214f30e3117d}{%
+           family={Brown},
+           familyi={B\bibinitperiod},
+           given={Robert},
+           giveni={R\bibinitperiod}}}%
+      }
+      \strng{namehash}{d65da7194d08361e41ed4620b2dd729b}
+      \strng{fullhash}{d65da7194d08361e41ed4620b2dd729b}
+      \strng{fullhashraw}{d65da7194d08361e41ed4620b2dd729b}
+      \strng{bibnamehash}{d65da7194d08361e41ed4620b2dd729b}
+      \strng{authorbibnamehash}{d65da7194d08361e41ed4620b2dd729b}
+      \strng{authornamehash}{d65da7194d08361e41ed4620b2dd729b}
+      \strng{authorfullhash}{d65da7194d08361e41ed4620b2dd729b}
+      \strng{authorfullhashraw}{d65da7194d08361e41ed4620b2dd729b}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Smart Agriculture Technology}
+      \field{title}{Agricultural Technology Evolution: A Systematic Review}
+      \field{volume}{8}
+      \field{year}{2023}
+      \field{pages}{120\bibrangedash 135}
+      \range{pages}{16}
+    \endentry
+    \entry{farmbot2020}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=47693f0a64434423b6181c696f8d53ce}{%
+           family={Aronson},
+           familyi={A\bibinitperiod},
+           given={Rory},
+           giveni={R\bibinitperiod}}}%
+        {{hash=5d0ddda3a367ceb26fbaeca02e391c22}{%
+           family={Smith},
+           familyi={S\bibinitperiod},
+           given={John},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{1793e238cf081f0ab5706f2410ee51ba}
+      \strng{fullhash}{1793e238cf081f0ab5706f2410ee51ba}
+      \strng{fullhashraw}{1793e238cf081f0ab5706f2410ee51ba}
+      \strng{bibnamehash}{1793e238cf081f0ab5706f2410ee51ba}
+      \strng{authorbibnamehash}{1793e238cf081f0ab5706f2410ee51ba}
+      \strng{authornamehash}{1793e238cf081f0ab5706f2410ee51ba}
+      \strng{authorfullhash}{1793e238cf081f0ab5706f2410ee51ba}
+      \strng{authorfullhashraw}{1793e238cf081f0ab5706f2410ee51ba}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Open Agriculture}
+      \field{number}{1}
+      \field{title}{Development of FarmBot: An Open-Source Agricultural Automation Platform}
+      \field{volume}{5}
+      \field{year}{2020}
+      \field{pages}{20\bibrangedash 30}
+      \range{pages}{11}
+    \endentry
+    \entry{urban_farming2022}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=b06c5730edff94b151e7e0d81439cbdf}{%
+           family={Wilson},
+           familyi={W\bibinitperiod},
+           given={Andrew},
+           giveni={A\bibinitperiod}}}%
+        {{hash=fed56306e0b43cc270e6d75eb460b5f9}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Sarah},
+           giveni={S\bibinitperiod}}}%
+      }
+      \strng{namehash}{838c154a40570f0e82c8fb7977ba47b3}
+      \strng{fullhash}{838c154a40570f0e82c8fb7977ba47b3}
+      \strng{fullhashraw}{838c154a40570f0e82c8fb7977ba47b3}
+      \strng{bibnamehash}{838c154a40570f0e82c8fb7977ba47b3}
+      \strng{authorbibnamehash}{838c154a40570f0e82c8fb7977ba47b3}
+      \strng{authornamehash}{838c154a40570f0e82c8fb7977ba47b3}
+      \strng{authorfullhash}{838c154a40570f0e82c8fb7977ba47b3}
+      \strng{authorfullhashraw}{838c154a40570f0e82c8fb7977ba47b3}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Urban Agriculture Quarterly}
+      \field{number}{3}
+      \field{title}{Urban Farming Technologies: Current State and Future Perspectives}
+      \field{volume}{15}
+      \field{year}{2022}
+      \field{pages}{78\bibrangedash 92}
+      \range{pages}{15}
+    \endentry
+    \entry{automation2023}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=e05e2ea082a0a9e4582b36599f8aab0f}{%
+           family={Davis},
+           familyi={D\bibinitperiod},
+           given={Kevin},
+           giveni={K\bibinitperiod}}}%
+        {{hash=620e64515a5720998bb777dd3613e501}{%
+           family={Miller},
+           familyi={M\bibinitperiod},
+           given={Emma},
+           giveni={E\bibinitperiod}}}%
+      }
+      \strng{namehash}{7c13838f2764735b13443530d47444f5}
+      \strng{fullhash}{7c13838f2764735b13443530d47444f5}
+      \strng{fullhashraw}{7c13838f2764735b13443530d47444f5}
+      \strng{bibnamehash}{7c13838f2764735b13443530d47444f5}
+      \strng{authorbibnamehash}{7c13838f2764735b13443530d47444f5}
+      \strng{authornamehash}{7c13838f2764735b13443530d47444f5}
+      \strng{authorfullhash}{7c13838f2764735b13443530d47444f5}
+      \strng{authorfullhashraw}{7c13838f2764735b13443530d47444f5}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Robotics in Agriculture}
+      \field{title}{Agricultural Automation: Challenges and Opportunities}
+      \field{volume}{5}
+      \field{year}{2023}
+      \field{pages}{201\bibrangedash 215}
+      \range{pages}{15}
+    \endentry
+    \entry{iot_agriculture2023}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=38e8b9291102fa60625ad2a82f093f41}{%
+           family={Thompson},
+           familyi={T\bibinitperiod},
+           given={Richard},
+           giveni={R\bibinitperiod}}}%
+        {{hash=7988598546b60ae5376580c33ef7cb20}{%
+           family={White},
+           familyi={W\bibinitperiod},
+           given={Michael},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{2fd56125d99900d696f952b3b6394c02}
+      \strng{fullhash}{2fd56125d99900d696f952b3b6394c02}
+      \strng{fullhashraw}{2fd56125d99900d696f952b3b6394c02}
+      \strng{bibnamehash}{2fd56125d99900d696f952b3b6394c02}
+      \strng{authorbibnamehash}{2fd56125d99900d696f952b3b6394c02}
+      \strng{authornamehash}{2fd56125d99900d696f952b3b6394c02}
+      \strng{authorfullhash}{2fd56125d99900d696f952b3b6394c02}
+      \strng{authorfullhashraw}{2fd56125d99900d696f952b3b6394c02}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Smart Farming Technology}
+      \field{number}{4}
+      \field{title}{IoT Applications in Modern Agriculture}
+      \field{volume}{10}
+      \field{year}{2023}
+      \field{pages}{156\bibrangedash 170}
+      \range{pages}{15}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

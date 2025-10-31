@@ -1,0 +1,79 @@
+\chapter{SYSTEM IMPLEMENTATION}
+
+This chapter presents a detailed account of the FarmBot system implementation, encompassing the mechanical assembly, edge computing integration, and cloud infrastructure deployment. The implementation process followed a systematic approach to ensure all components work harmoniously while maintaining system reliability and performance.
+
+\section{Mechanical Implementation}
+
+The mechanical implementation phase focused on the precise assembly and configuration of the FarmBot's physical components, ensuring alignment with the design specifications while addressing practical challenges encountered during the setup process. This phase was crucial for establishing a stable foundation for the system's operation.
+
+\subsection{Compliance with Architectural Specifications}
+The implementation process strictly adhered to the predefined architectural and mechanical specifications, with systematic documentation of any necessary deviations. This approach ensured that all modifications were properly tracked and validated, maintaining the system's structural integrity and operational capabilities. When design adjustments were required, they were carefully evaluated and implemented to preserve system functionality while addressing practical constraints.
+
+\subsection{Assembly and Configuration Process}
+The implementation process encompassed a comprehensive series of mechanical adjustments and configurations, each crucial for ensuring optimal system performance. Multiple aspects of the physical assembly required careful attention and precise calibration to meet operational requirements. Figure \ref{fig:implementation-flow} illustrates the systematic approach taken during the implementation process.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/graph.png}
+    \caption{FarmBot Implementation Process Flow}
+    \label{fig:implementation-flow}
+\end{figure}
+
+\subsubsection{Equipment Installation and Track Verification}
+The initial implementation phase focused on the precise positioning and validation of core components. A systematic inspection of the main assembly components -- including rails, gantry, tool head, motors, and control box -- was conducted according to detailed placement specifications. During the track and rail assessment, several critical issues emerged, notably stuck bearings and structural misalignment in the FarmBot framework. These alignment discrepancies were identified as crucial factors affecting motion smoothness and required immediate attention.
+
+Comprehensive testing of the gantry-rail system validated both stability and movement precision. The bearing systems underwent thorough inspection and adjustment procedures to achieve optimal motion characteristics, establishing a foundation for reliable system operation.
+
+\subsubsection{Infrastructure Configuration}
+The infrastructure implementation addressed both power distribution and network connectivity requirements. A methodical approach to power and signal cable routing ensured both operational efficiency and adherence to safety standards. Network infrastructure was enhanced through the integration of a dedicated router with the control unit, establishing reliable internet connectivity for remote monitoring and control capabilities.
+
+\subsubsection{Fluid Management System}
+Implementation of the fluid management system required careful attention to both primary and secondary delivery mechanisms. The main water distribution system underwent thorough testing to verify proper flow characteristics and secure connections to the tool head assembly. All substance delivery systems were subjected to comprehensive leak testing and flow verification to ensure reliable operation during various farming operations.
+
+\subsubsection{System Configuration}
+To establish a stable operational foundation, a complete system reset was executed, including the removal and reimaging of the SD card with updated operating system components. This process ensured that the FarmBot system would operate on a clean, properly configured software base, eliminating potential legacy issues or conflicts.
+
+\subsection{Implementation Documentation}
+The implementation process was meticulously documented through comprehensive progress reports. These reports incorporated detailed photographic evidence of key procedures, including track inspection, bearing modifications, and system configuration steps. Critical observations regarding mechanical issues and their respective solutions were carefully recorded, along with detailed validation checklists covering motion systems, fluid delivery, and network infrastructure. This documentation serves as a valuable reference for future maintenance and system optimization efforts.
+
+\section{Edge Computing Implementation}
+
+The implementation of the Edge Computing component for the FarmBot Genesis 1.6 required the development of a sophisticated software ecosystem. This system was designed to handle local data processing while maintaining secure and efficient information exchange with the cloud infrastructure. The implementation strategy prioritized robust communication protocols, essential functionality development, and comprehensive testing procedures.
+
+\subsection{Communication Protocol Integration}
+The implementation of communication protocols focused on establishing reliable data exchange pathways between various system components. At the lowest level, serial communication protocols were implemented to facilitate direct interaction with FarmBot's sensors and actuators, enabling precise control and immediate data collection. The MQTT protocol was selected as the primary network communication mechanism, leveraging its lightweight nature and native support for IoT architectures to enable efficient sensor data publishing and command reception.
+
+For external service integration and diagnostic purposes, HTTP protocols were implemented to handle asynchronous data exchange where immediate response times were not critical. This multi-protocol approach ensured robust communication across all system layers while maintaining optimal performance characteristics for each interaction type.
+
+\subsection{Core System Development}
+The development of core system functionalities centered on four primary components. The sensor data acquisition system was implemented to enable real-time collection of environmental parameters, including soil moisture, temperature, and positioning data. Local processing capabilities were integrated directly on the edge device, incorporating sophisticated filtering algorithms to optimize data transmission and enable autonomous decision-making capabilities.
+
+The actuator control system was developed to manage the physical components of the FarmBot, including motors and pumps, responding to both MQTT commands and local safety parameters. User feedback mechanisms were implemented through an integrated LED module and display system, providing real-time status information and critical alerts to operators.
+
+\subsection{Cloud Infrastructure Integration}
+The integration with Oracle Cloud infrastructure required careful configuration of multiple components. A dedicated server was established with specific optimizations, including the implementation of non-expiring authorization tokens and the removal of MQTT broker request limitations. The containerized architecture, built using Docker, ensures proper service isolation while maintaining system scalability and simplified update procedures.
+
+\subsection{Validation and Quality Assurance}
+The implementation process concluded with comprehensive testing procedures conducted directly on the device. These tests encompassed verification of serial communication pathways, validation of MQTT workflows between the edge device and cloud infrastructure, and thorough evaluation of local processing capabilities. Particular attention was paid to identifying and resolving networking issues, specifically focusing on connection management and broker synchronization challenges.
+
+\section{Cloud Infrastructure Implementation}
+
+The cloud infrastructure implementation focused on creating a robust platform for data management, device interaction, and system monitoring. This component integrates sophisticated front-end and back-end subsystems, establishing seamless communication with edge devices through MQTT and REST APIs. The implementation strategy emphasized reliability, scalability, and user experience optimization.
+
+\subsection{User Interface Development}
+The front-end implementation utilized React's component-based architecture to create an efficient and intuitive user interface. This choice facilitated the development of responsive, high-performance monitoring and control systems. The implementation incorporated real-time monitoring dashboards that leverage MQTT subscriptions for dynamic sensor data updates, providing operators with immediate access to system status information.
+
+A comprehensive control panel was developed to enable precise actuator management, incorporating intuitive controls for system operation. The interface implementation prioritized responsive design principles, ensuring consistent functionality across various device types and screen sizes. A significant feature of the front-end implementation is the integrated photo visualization system, which processes and displays the FarmBot's camera feed. This capability enables detailed plant growth monitoring, facilitates error detection, and provides visual confirmation of completed tasks.
+
+\subsection{Service Layer Implementation}
+The back-end implementation utilized Django and Django REST Framework (DRF) to establish a robust and scalable service infrastructure. The MQTT integration was implemented through a custom farmbot-mqtt.py module, enabling reliable publish/subscribe communication patterns between cloud services and edge devices. Structured REST API endpoints were developed to facilitate data access, user management, and control command transmission.
+
+Data persistence was implemented using a SQLite database, chosen for its simplicity and reliability in handling sensor data and user activity logs. This implementation enables comprehensive historical data analysis while maintaining system traceability. The security implementation leverages Django's built-in authentication features and DRF extensions, providing secure user account management through both traditional email/password authentication and OAuth2 protocols.
+
+\subsection{Deployment Architecture}
+The deployment implementation utilized Docker containerization for all back-end services and the MQTT broker. This approach ensures proper service isolation while maintaining system flexibility and scalability. Each component -- including the MQTT broker, Django application, and database services -- operates independently within its contained environment, facilitating easier maintenance and updates.
+
+\subsection{Quality Assurance Implementation}
+The implementation process concluded with comprehensive testing procedures across all system layers. Front-end testing validated real-time update capabilities, interface responsiveness, and API integration accuracy. Back-end validation focused on REST API endpoint functionality, MQTT message handling efficiency, and database consistency maintenance.
+
+Integration testing verified the complete system workflow, from initial sensor data acquisition through cloud transmission and visualization, to command execution on edge devices. Specific attention was given to identifying and resolving issues related to MQTT connection management and API response handling, ensuring robust system performance under various operational conditions.

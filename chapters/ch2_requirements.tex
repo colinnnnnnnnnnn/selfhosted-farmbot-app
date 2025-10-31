@@ -1,0 +1,116 @@
+\chapter{REQUIREMENTS SPECIFICATION}
+
+This chapter outlines the comprehensive requirements specification for the FarmBot system, including user stories that capture stakeholder needs, system requirements that detail technical specifications, and system components that form the architecture.
+
+\section{User Stories}
+
+The following user stories capture the key requirements from different stakeholders' perspectives:
+
+\begin{longtable}{|p{0.12\textwidth}|p{0.48\textwidth}|p{0.15\textwidth}|p{0.25\textwidth}|}
+\hline
+\textbf{ID} & \textbf{Story} & \textbf{Importance} & \textbf{Additional Notes} \\
+\hline
+\endhead
+US-001 & As a farmer, I want automatic pest detection through FarmBot cameras so that I can reduce crop losses without constant monitoring. & Must Have & AI must identify >90\% of common pests. \\
+\hline
+US-002 & As a farmer, I want FarmBot to recommend irrigation schedules based on soil moisture so that I can reduce unnecessary water use. & Must Have & Apply MoSCoW prioritization. \\
+\hline
+US-003 & As a developer, I want modular APIs for integrating multiple weather providers so that FarmBot is more flexible. & Should Have & API must support at least 3 main providers. \\
+\hline
+US-004 & As a policymaker, I want reporting dashboards from FarmBot so that I can track sustainability indicators. & Should Have & Dashboard aligned with national agri KPIs. \\
+\hline
+US-005 & As a cooperative manager, I want multi-user access in FarmBot so that members can coordinate tasks together. & Must Have & Login with roles and permissions. \\
+\hline
+US-006 & As a researcher, I want anonymized FarmBot datasets so that I can study crop efficiency without privacy risks. & Must Have & Must comply with GDPR. \\
+\hline
+US-007 & As an agronomist, I want FarmBot soil nutrient analytics so that I can recommend better crop rotation strategies. & Could Have & Reports must have <5\% error margin. \\
+\hline
+US-008 & As a visually impaired user, I want voice-guided FarmBot instructions so that I can interact without a screen. & Must Have & Screen-reader compatibility and voice navigation. \\
+\hline
+US-009 & As a farmer, I want FarmBot to generate seasonal yield forecasts so that I can plan sales better. & Could Have & Forecast validated with 3 past seasons. \\
+\hline
+US-010 & As an extension officer, I want FarmBot tutorials in local languages so that farmers can clearly understand the instructions. & Should Have & At least 3 language versions available. \\
+\hline
+US-011 & As a government official, I want FarmBot to generate compliance reports on water and pesticide use so that I can ensure farms meet environmental regulations. & Must Have & Reports must align with EU Farm to Fork and local legislation. \\
+\hline
+\end{longtable}
+
+\section{System Requirements}
+
+Based on the user stories, the following system requirements were derived:
+
+\begin{longtable}{|p{0.12\textwidth}|p{0.48\textwidth}|p{0.15\textwidth}|p{0.25\textwidth}|}
+\hline
+\textbf{ID} & \textbf{Requirement} & \textbf{Satisfy Story} & \textbf{Additional Notes} \\
+\hline
+\endhead
+SYR-001 & The system must include visual recognition algorithms for pest detection. & US-001 & AI trained on local datasets. \\
+\hline
+SYR-002 & Soil sensors must provide data for generating automatic irrigation schedules. & US-002 & Data collected at 30-minute intervals. \\
+\hline
+SYR-003 & The FarmBot API must support integration with at least 3 different weather providers. & US-003 & Support for OpenWeather, ECMWF, and a local provider. \\
+\hline
+SYR-004 & Dashboards must include reports on water use, energy consumption, and crop yield. & US-004 & Export available in PDF and CSV. \\
+\hline
+SYR-005 & The system must support multi-user accounts with role-based access (admin, technician, operator). & US-005 & Granular permission control. \\
+\hline
+SYR-006 & FarmBot data must be anonymized before being shared with third parties. & US-006 & Must comply with GDPR and ISO/IEC 20889. \\
+\hline
+SYR-007 & Soil sensors must report NPK levels with <5\% error margin. & US-007 & Results validated through independent testing. \\
+\hline
+SYR-008 & The system must include voice guidance and screen-reader compatibility. & US-008 & Tested with NVDA and JAWS. \\
+\hline
+SYR-009 & The forecasting module must calculate yields based on historical and real-time data. & US-009 & Forecasts tested on the last 3 agricultural seasons. \\
+\hline
+SYR-010 & FarmBot tutorials must be available in at least 3 regional languages. & US-010 & Translations verified by native speakers. \\
+\hline
+SYR-011 & FarmBot must generate automated compliance reports on pesticide and water usage. & US-011 & Reports formatted to meet EU Farm to Fork and local requirements. \\
+\hline
+\end{longtable}
+
+\section{System Components}
+
+The FarmBot system consists of the following major components:
+
+\begin{longtable}{|p{0.25\textwidth}|p{0.35\textwidth}|p{0.4\textwidth}|}
+\hline
+\textbf{Component} & \textbf{Description} & \textbf{Additional Notes} \\
+\hline
+\endhead
+FarmBot Web App & Web interface for farm design, control, and photo viewing & Hosted at my.farmbot.io; communicates via MQTT \\
+\hline
+Django Backend & Handles user authentication, API logic, and token management & Built with Django; interfaces with DB and FarmBot API \\
+\hline
+MQTT Gateway & Real-time message broker between frontend and FarmBot device & Uses MQTT protocol; bridges cloud and hardware \\
+\hline
+OpenFarm.cc & External crop database providing plant information & Enriches farm planning via API integration \\
+\hline
+FarmBot Configurator & Setup tool for WiFi and web app credentials & Used during initial device configuration \\
+\hline
+Raspberry Pi Controller & Central hardware unit running FarmBot OS; executes commands and logs & Interfaces with Arduino, webcam, and MQTT; controls logic and data flow \\
+\hline
+Arduino/RAMPS Board & Microcontroller board controlling motors, sensors, and tools & Receives G-CODE from Raspberry Pi; runs firmware for physical actuation \\
+\hline
+Stepper Motors & Drive the FarmBot's X, Y, Z axis movement & Controlled via Arduino; essential for precision positioning \\
+\hline
+Rotary Encoders & Provide feedback on motor rotation and position & Improve accuracy of movement; connected to stepper motors \\
+\hline
+Watering Tool & Dispenses water to plants based on duration and location & Activated via G-CODE; mounted on tool head \\
+\hline
+Soil Sensor & Measures soil moisture and other environmental data & Sends sensor data to Raspberry Pi for logging and decision-making \\
+\hline
+Webcam / USB Camera & Captures images of the farm environment & Connected to Raspberry Pi; used for visual monitoring and documentation \\
+\hline
+Camera Mount & Physical holder for the webcam on the tool head & Ensures stable image capture; adjustable for angle and focus \\
+\hline
+Tool Bay & Storage and switching station for FarmBot tools & Allows automatic tool changes; controlled via Raspberry Pi and Arduino \\
+\hline
+Power Supply Unit & Provides electrical power to all FarmBot components & Converts AC to DC; includes voltage regulation and safety features \\
+\hline
+WiFi Module & Enables network connectivity for Raspberry Pi & Required for cloud communication and remote control \\
+\hline
+Frame \& Gantry System & Structural hardware for movement across the farm bed & Supports X/Y/Z axis; includes rails, belts, and pulleys \\
+\hline
+\end{longtable}
+
+Each component plays a crucial role in the overall functionality of the FarmBot system, working together to deliver the features and capabilities defined in the user stories and system requirements. The components are designed with modularity in mind, allowing for easy maintenance, upgrades, and scalability of the system.
