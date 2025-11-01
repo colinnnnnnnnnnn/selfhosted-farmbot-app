@@ -8,3 +8,5 @@ PyJWT
 cryptography
 paho-mqtt
 python-dotenv
+channels
+daphne
