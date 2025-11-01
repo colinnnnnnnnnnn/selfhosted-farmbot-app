@@ -1,5 +1,7 @@
 from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
+    SequenceViewSet,
     connect_view, move_absolute_view, move_relative_view,
     emergency_lock_view, emergency_unlock_view, find_home_view,
     go_to_home_view, power_off_view, reboot_view, servo_angle_view,
@@ -8,7 +10,11 @@ from .views import (
     mount_tool_view, dismount_tool_view, dispense_view, clear_photos_view
 )
 
+router = DefaultRouter()
+router.register(r'sequences', SequenceViewSet, basename='sequence')
+
 urlpatterns = [
+    path('', include(router.urls)),
     path('auth/register/', register_view, name='auth-register'),
     path('auth/login/', login_view, name='auth-login'),
     path('auth/logout/', logout_view, name='auth-logout'),
