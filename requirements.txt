@@ -1,0 +1,10 @@
+django
+djangorestframework
+django-cors-headers
+django-allauth
+dj-rest-auth
+requests
+jwt
+cryptography
+paho-mqtt
+python-dotenv
