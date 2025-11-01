@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 import json
+import threading
 import time
 from .models import Sequence, Step
 from .serializers import (
@@ -21,6 +22,11 @@ from farmlib.wrapper import (
     get_position, send_message, take_photo, water_plant, mount_tool, 
     dismount_tool, dispense
 )
+
+# Initialize bot connection when server starts
+connection_thread = threading.Thread(target=connect_bot)
+connection_thread.daemon = True
+connection_thread.start()
 
 class SequenceViewSet(viewsets.ModelViewSet):
     serializer_class = SequenceSerializer
