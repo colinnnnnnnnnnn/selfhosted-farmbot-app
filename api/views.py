@@ -5,6 +5,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+import json
 from .serializers import (
     PositionSerializer, ServoAngleSerializer, MessageSerializer, 
     LuaScriptSerializer, WateringSerializer, DispensingSerializer,
@@ -22,6 +25,19 @@ import threading
 connection_thread = threading.Thread(target=connect_bot)
 connection_thread.daemon = True
 connection_thread.start()
+
+@login_required
+def social_auth_callback_view(request):
+    token, _ = Token.objects.get_or_create(user=request.user)
+    user_data = {
+        'id': request.user.id,
+        'username': request.user.username,
+        'email': request.user.email,
+    }
+    return render(request, 'social_auth_callback.html', {
+        'token': token.key,
+        'user': json.dumps(user_data)
+    })
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
