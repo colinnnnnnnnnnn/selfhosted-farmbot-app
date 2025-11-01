@@ -4,7 +4,7 @@ django-cors-headers
 django-allauth
 dj-rest-auth
 requests
-jwt
+PyJWT
 cryptography
 paho-mqtt
 python-dotenv
