@@ -5,6 +5,9 @@ import requests
 import io
 import os
 import re
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Global variables
 bot = None
@@ -91,8 +94,8 @@ def connect_bot():
     try:
         api_server = "http://144.21.63.33:3000"
         bot = Farmbot.login(
-            email="ilia.covali@gmail.com",
-            password="penispassword",
+            email=os.getenv('FARMBOT_EMAIL'),
+            password=os.getenv('FARMBOT_PASSWORD'),
             server=api_server
         )
         bot_token = bot.password
