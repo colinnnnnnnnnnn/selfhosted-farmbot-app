@@ -6,6 +6,8 @@ import io
 import os
 import re
 from dotenv import load_dotenv
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 load_dotenv()
 
@@ -43,6 +45,14 @@ class ConnectHandler:
         print("State updated")
 
     def on_log(self, bot, log):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'logs',
+            {
+                'type': 'log_message',
+                'message': log
+            }
+        )
         if isinstance(log, dict):
             # Проверяем сообщение о загрузке фото
             message = log.get('message', '')
