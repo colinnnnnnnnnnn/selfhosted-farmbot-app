@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .models import Sequence, Step
 
 class PositionSerializer(serializers.Serializer):
     x = serializers.FloatField(required=True)
@@ -31,3 +32,34 @@ class DispensingSerializer(serializers.Serializer):
 
 class ToolSerializer(serializers.Serializer):
     tool_name = serializers.CharField(required=True)
+
+class StepSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Step
+        fields = ['id', 'command', 'parameters', 'order']
+
+class SequenceSerializer(serializers.ModelSerializer):
+    steps = StepSerializer(many=True)
+
+    class Meta:
+        model = Sequence
+        fields = ['id', 'name', 'steps']
+
+    def create(self, validated_data):
+        steps_data = validated_data.pop('steps')
+        sequence = Sequence.objects.create(**validated_data)
+        for step_data in steps_data:
+            Step.objects.create(sequence=sequence, **step_data)
+        return sequence
+
+    def update(self, instance, validated_data):
+        steps_data = validated_data.pop('steps')
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+
+        # Simple update: delete old steps and create new ones
+        instance.steps.all().delete()
+        for step_data in steps_data:
+            Step.objects.create(sequence=instance, **step_data)
+
+        return instance
