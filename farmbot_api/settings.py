@@ -35,6 +35,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     # CORS
     'corsheaders',
 
+    'channels',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -91,7 +93,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'farmbot_api.wsgi.application'
+ASGI_APPLICATION = 'farmbot_api.asgi.application'
 
 
 # Database
