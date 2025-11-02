@@ -8,7 +8,7 @@ from .views import (
     lua_script_view, get_position_view, send_message_view, take_photo_view,
     register_view, login_view, logout_view, me_view, water_plant_view,
     mount_tool_view, dismount_tool_view, dispense_view, clear_photos_view,
-    seed_injector_view, rotary_tool_view, soil_sensor_view
+    seed_injector_view, rotary_tool_view, soil_sensor_view, weeder_view
 )
 
 router = DefaultRouter()
@@ -47,4 +47,5 @@ urlpatterns = [
     path('seed-injector/', seed_injector_view, name='seed-injector'),
     path('rotary-tool/', rotary_tool_view, name='rotary-tool'),
     path('soil-sensor/', soil_sensor_view, name='soil-sensor'),
+    path('weeder/', weeder_view, name='weeder'),
 ]
