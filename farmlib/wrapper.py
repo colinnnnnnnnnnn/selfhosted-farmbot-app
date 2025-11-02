@@ -5,6 +5,11 @@ import requests
 import io
 import os
 import re
+from dotenv import load_dotenv
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+load_dotenv()
 
 # Global variables
 bot = None
@@ -40,6 +45,14 @@ class ConnectHandler:
         print("State updated")
 
     def on_log(self, bot, log):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'logs',
+            {
+                'type': 'log_message',
+                'message': log
+            }
+        )
         if isinstance(log, dict):
             # Проверяем сообщение о загрузке фото
             message = log.get('message', '')
@@ -91,8 +104,8 @@ def connect_bot():
     try:
         api_server = "http://144.21.63.33:3000"
         bot = Farmbot.login(
-            email="ilia.covali@gmail.com",
-            password="penispassword",
+            email=os.getenv('FARMBOT_EMAIL'),
+            password=os.getenv('FARMBOT_PASSWORD'),
             server=api_server
         )
         bot_token = bot.password

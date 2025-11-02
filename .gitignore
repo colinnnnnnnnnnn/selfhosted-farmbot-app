@@ -237,7 +237,6 @@ Thumbs.db
 
 # Project specific
 farm_images/
-*.txt
 photo_counter.txt
 
 # Media files (if you don't want to track uploaded files)

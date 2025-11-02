@@ -16,10 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from api.views import social_auth_callback_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('dj_rest_auth.urls')),
     path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('social-auth-callback/', social_auth_callback_view, name='social_auth_callback'),
     path('api/', include('api.urls')),
 ]

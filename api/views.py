@@ -1,27 +1,98 @@
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes, authentication_classes, action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+import json
+import threading
+import time
+from .models import Sequence, Step
 from .serializers import (
     PositionSerializer, ServoAngleSerializer, MessageSerializer, 
     LuaScriptSerializer, WateringSerializer, DispensingSerializer,
-    ToolSerializer
+    ToolSerializer, SequenceSerializer
 )
-from farmlib.wrapper import connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock
 from farmlib.wrapper import (
+    connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock,
     find_home, go_to_home, power_off, reboot, servo_angle, lua_script, 
     get_position, send_message, take_photo, water_plant, mount_tool, 
     dismount_tool, dispense
 )
-import threading
 
 # Initialize bot connection when server starts
 connection_thread = threading.Thread(target=connect_bot)
 connection_thread.daemon = True
 connection_thread.start()
+
+class SequenceViewSet(viewsets.ModelViewSet):
+    serializer_class = SequenceSerializer
+    permission_classes = [IsAuthenticated]
+
+    COMMAND_MAP = {
+        'move_absolute': move_absolute,
+        'move_relative': move_relative,
+        'water_plant': water_plant,
+        'dispense': dispense,
+        'take_photo': take_photo,
+        'mount_tool': mount_tool,
+        'dismount_tool': dismount_tool,
+        'emergency_lock': emergency_lock,
+        'emergency_unlock': emergency_unlock,
+        'find_home': find_home,
+        'go_to_home': go_to_home,
+        'power_off': power_off,
+        'reboot': reboot,
+        'servo_angle': servo_angle,
+        'lua_script': lua_script,
+        'send_message': send_message,
+    }
+
+    def get_queryset(self):
+        return Sequence.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def execute(self, request, pk=None):
+        sequence = self.get_object()
+        for step in sequence.steps.all():
+            command_func = self.COMMAND_MAP.get(step.command)
+            if not command_func:
+                return Response({'error': f'Unknown command: {step.command}'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                print(f"Executing command: {step.command} with params: {step.parameters}")
+                command_func(**step.parameters)
+                # Default wait time, can be overridden by step parameter
+                wait_time = step.parameters.get('wait', 2)
+                time.sleep(wait_time)
+            except Exception as e:
+                return Response({'error': f'Failed to execute step {step.order} ({step.command}): {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response({'status': 'sequence executed'}, status=status.HTTP_200_OK)
+
+
+@login_required
+def social_auth_callback_view(request):
+    if not connect_bot():
+        return render(request, 'social_auth_callback.html', {
+            'error': 'Could not connect to FarmBot. Please check credentials and network.'
+        })
+    token, _ = Token.objects.get_or_create(user=request.user)
+    user_data = {
+        'id': request.user.id,
+        'username': request.user.username,
+        'email': request.user.email,
+    }
+    return render(request, 'social_auth_callback.html', {
+        'token': token.key,
+        'user': json.dumps(user_data)
+    })
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -49,6 +120,10 @@ def login_view(request):
     user = authenticate(username=username, password=password)
     if not user:
         return Response({"error": "invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    if not connect_bot():
+        return Response({"error": "Could not connect to FarmBot"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
     token, _ = Token.objects.get_or_create(user=user)
     return Response({"token": token.key}, status=status.HTTP_200_OK)
 
