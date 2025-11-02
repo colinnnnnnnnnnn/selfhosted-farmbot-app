@@ -8,6 +8,7 @@ const ControlButtons = ({
   handleHome, 
   handleTakePhoto, 
   handleClearPhotos,
+  handleOpenGallery,
   handleLogout,
   loading, 
   photoLoading, 
@@ -27,6 +28,9 @@ const ControlButtons = ({
       <div style={{ display: 'flex', gap: 20 }}>
         <button className="stone-button" onClick={handleTakePhoto} disabled={photoLoading}>
           {photoLoading ? 'Taking Photo...' : 'Take Photo'}
+        </button>
+        <button className="stone-button" onClick={handleOpenGallery}>
+          Gallery
         </button>
         <button className="stone-button" onClick={handleClearPhotos}>
           Clear Photos ({photoCount})

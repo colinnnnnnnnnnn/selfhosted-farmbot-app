@@ -5,6 +5,7 @@ import { useAuth } from './hooks/useAuth';
 import { useFarmBotPosition } from './hooks/useFarmBotPosition';
 import { usePhotos } from './hooks/usePhotos';
 import ControlButtons from './components/ControlButtons';
+import PhotoGallery from './components/PhotoGallery';
 import StatusDisplay from './components/StatusDisplay';
 import MoveAbsoluteForm from './components/MoveAbsoluteForm';
 import MoveRelativeForm from './components/MoveRelativeForm';
@@ -36,8 +37,12 @@ function App() {
   // UI state
   const [photoLoading, setPhotoLoading] = useState(false);
   const [botVisible, setBotVisible] = useState(true);
+  // Gallery modal state
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   // Handlers
+  const handleOpenGallery = () => setGalleryOpen(true);
+  const handleCloseGallery = () => setGalleryOpen(false);
   const handleLogout = () => {
     authLogout();
     setPhotoData([]);
@@ -166,9 +171,9 @@ function App() {
         </h1>
       </div>
 
-      {/* Top section with controls and move forms */}
-      <div className="dirt-background" style={{ display: 'flex', gap: 40, marginBottom: 20, padding: '15px 20px' }}>
-        <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+  {/* Top section with controls and move forms */}
+  <div className="dirt-background" style={{ display: 'flex', gap: 40, marginBottom: 20, padding: '15px 20px', alignItems: 'flex-start', minHeight: '160px', maxHeight: '260px', overflow: 'hidden', boxSizing: 'border-box' }}>
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start' }}>
           <ControlButtons
             handleGet={handleGet}
             handleUnlock={handleUnlock}
@@ -177,10 +182,13 @@ function App() {
             handleHome={handleHome}
             handleTakePhoto={handleTakePhoto}
             handleClearPhotos={handleClearPhotos}
+            handleOpenGallery={handleOpenGallery}
             loading={loading}
             photoLoading={photoLoading}
             photoCount={photoData.length}
           />
+  {/* Photo Gallery Modal */}
+  <PhotoGallery photos={photoData} open={galleryOpen} onClose={handleCloseGallery} />
 
           <StatusDisplay
             position={position}
@@ -189,8 +197,8 @@ function App() {
           />
         </div>
 
-        {/* Move sections */}
-        <div style={{ flex: '1', display: 'flex', gap: 40 }}>
+  {/* Move sections */}
+  <div style={{ flex: '1', display: 'flex', gap: 40, alignItems: 'flex-start' }}>
           <MoveAbsoluteForm
             moveForm={moveForm}
             handleInputChange={handleInputChange}
