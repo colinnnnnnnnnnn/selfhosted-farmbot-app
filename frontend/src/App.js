@@ -11,6 +11,7 @@ import MoveRelativeForm from './components/MoveRelativeForm';
 import ManualJogPad from './components/ManualJogPad';
 import FarmBotMap from './components/FarmBotMap';
 import BotVisibilityToggle from './components/BotVisibilityToggle';
+import LogViewer from './components/LogViewer';
 import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
 import { takePhoto, clearAllPhotos } from './services/photoService';
 import { waterPlant, weed } from './services/actionService';
@@ -213,10 +214,19 @@ function App() {
         />
       </div>
 
-      {/* Main content area with centered grid */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', position: 'relative' }}>
+      {/* Lower section: toggle, grid, and logs in one horizontal flex container */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '24px',
+        minHeight: '400px',
+        marginTop: '40px'
+      }}>
         <BotVisibilityToggle botVisible={botVisible} setBotVisible={setBotVisible} />
         <FarmBotMap position={position} photoData={photoData} botVisible={botVisible} />
+        <LogViewer />
       </div>
 
       {/* Logout button in bottom right corner */}

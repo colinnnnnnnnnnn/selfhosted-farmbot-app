@@ -5,15 +5,11 @@ const BotVisibilityToggle = ({ botVisible, setBotVisible }) => {
     <div 
       className="dirt-background" 
       style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 130, 
         display: 'flex', 
         flexDirection: 'column', 
         gap: 8, 
         alignItems: 'center', 
-        padding: '15px', 
-        zIndex: 1000 
+        padding: '15px'
       }}
     >
       <div style={{ color: 'white', fontSize: '14px' }}>Toggle Bot</div>
