@@ -2,8 +2,7 @@
 
 ## November 2025
 
-### New Tools and Sensors
-> Released 2025-11-02
+### 2025-11-02
 
 #### What's new
 
