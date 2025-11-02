@@ -534,6 +534,124 @@ def take_photo():
         print(f"Error taking photo: {e}")
         return None
 
+def read_soil_sensor():
+    """
+    Read the soil sensor data (moisture, temperature, etc.).
+    Returns:
+        dict: Dictionary containing soil sensor readings or None if failed
+    """
+    if bot is None:
+        print("Bot not connected!")
+        return None
+    
+    try:
+        # Use pin 59 for soil sensor readings (standard pin for soil sensor)
+        SOIL_SENSOR_PIN = 59
+        
+        # Read analog value from soil sensor
+        bot.read_pin(pin_number=SOIL_SENSOR_PIN, pin_mode="analog")
+        
+        # Get the moisture value from pin reading (0-1023 range)
+        moisture_raw = bot.state["pins"].get(str(SOIL_SENSOR_PIN), {}).get("value", 0)
+        
+        # Convert to percentage (0-100%)
+        moisture_percent = (moisture_raw / 1023) * 100
+        
+        return {
+            "moisture": round(moisture_percent, 2),
+            "raw_value": moisture_raw
+        }
+    except Exception as e:
+        print(f"Error reading soil sensor: {e}")
+        return None
+
+def use_seed_injector(seeds_count=1, dispense_time=1.0):
+    """
+    Use the seed injector to plant a specific number of seeds.
+    Args:S
+        seeds_count (int): Number of seeds to plant
+        dispense_time (float): Time in seconds for each seed dispensing action
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if bot is None:
+        print("Bot not connected!")
+        return False
+    
+    try:
+        # First ensure we have the seed injector mounted
+        if not verify_tool() or not mount_tool("seed_injector"):
+            print("Failed to mount seed injector")
+            return False
+            
+        # PIN 10 is typically used for seed injection
+        SEED_PIN = 10
+        
+        print(f"Dispensing {seeds_count} seeds...")
+        
+        for i in range(seeds_count):
+            # Activate seed injector
+            bot.write_pin(pin_number=SEED_PIN, pin_value=1, pin_mode="digital")
+            time.sleep(dispense_time)  # Wait for seed to drop
+            bot.write_pin(pin_number=SEED_PIN, pin_value=0, pin_mode="digital")
+            
+            if i < seeds_count - 1:  # Don't wait after the last seed
+                time.sleep(0.5)  # Short pause between seeds
+        
+        return True
+    except Exception as e:
+        print(f"Error using seed injector: {e}")
+        # Safety: ensure pin is off
+        try:
+            bot.write_pin(pin_number=SEED_PIN, pin_value=0, pin_mode="digital")
+        except:
+            pass
+        return False
+
+def use_rotary_tool(speed=100, duration=5.0):
+    """
+    Activate the rotary tool for operations like weeding or soil working.
+    Args:
+        speed (int): Speed percentage for the rotary tool (0-100)
+        duration (float): How long to run the tool in seconds
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if bot is None:
+        print("Bot not connected!")
+        return False
+    
+    try:
+        # First ensure we have the rotary tool mounted
+        if not verify_tool() or not mount_tool("rotary_tool"):
+            print("Failed to mount rotary tool")
+            return False
+            
+        # PIN 11 is typically used for rotary tool control
+        ROTARY_TOOL_PIN = 11
+        
+        # Convert speed percentage to pin value (0-255 for analog)
+        pin_value = int((speed / 100) * 255)
+        
+        print(f"Activating rotary tool at {speed}% speed...")
+        
+        # Activate rotary tool
+        bot.write_pin(pin_number=ROTARY_TOOL_PIN, pin_value=pin_value, pin_mode="analog")
+        time.sleep(duration)
+        
+        # Turn off tool
+        bot.write_pin(pin_number=ROTARY_TOOL_PIN, pin_value=0, pin_mode="analog")
+        
+        return True
+    except Exception as e:
+        print(f"Error using rotary tool: {e}")
+        # Safety: ensure pin is off
+        try:
+            bot.write_pin(pin_number=ROTARY_TOOL_PIN, pin_value=0, pin_mode="analog")
+        except:
+            pass
+        return False
+
 def main():
     # Start connection in background thread
     connection_thread = threading.Thread(target=connect_bot)
