@@ -3,7 +3,7 @@
 ## November 2025
 
 #### What's new
-New tool and sensors functionalities:
+New tool functionalities:
 * Implemented Watering Tool functionality (frontend & backend)
 * Implemented Weeder Tool functionality (front & back)
 * Added support for the Rotary Tool (backend)
