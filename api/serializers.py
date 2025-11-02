@@ -38,6 +38,18 @@ class StepSerializer(serializers.ModelSerializer):
         model = Step
         fields = ['id', 'command', 'parameters', 'order']
 
+class SeedInjectorSerializer(serializers.Serializer):
+    seeds_count = serializers.IntegerField(required=False, default=1, min_value=1)
+    dispense_time = serializers.FloatField(required=False, default=1.0, min_value=0.1)
+
+class RotaryToolSerializer(serializers.Serializer):
+    speed = serializers.IntegerField(required=False, default=100, min_value=0, max_value=100)
+    duration = serializers.FloatField(required=False, default=5.0, min_value=0.1)
+
+class SoilSensorSerializer(serializers.Serializer):
+    moisture = serializers.FloatField(read_only=True)
+    raw_value = serializers.IntegerField(read_only=True)
+
 class SequenceSerializer(serializers.ModelSerializer):
     steps = StepSerializer(many=True)
 
