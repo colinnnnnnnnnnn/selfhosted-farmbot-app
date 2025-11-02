@@ -1,5 +1,20 @@
 from rest_framework import serializers
-from .models import Sequence, Step
+from django.urls import reverse
+from .models import Sequence, Step, Photo
+
+class PhotoModelSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Photo
+        fields = ['id', 'farmbot_id', 'created_at', 'coordinates', 'meta_data', 'url']
+        read_only_fields = ['created_at']
+    
+    def get_url(self, obj):
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(f'/farm_images/{obj.filename}')
+        return f'/farm_images/{obj.filename}'
 
 class PositionSerializer(serializers.Serializer):
     x = serializers.FloatField(required=True)
