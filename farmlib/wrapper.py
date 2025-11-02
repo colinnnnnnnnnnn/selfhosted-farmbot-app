@@ -5,6 +5,7 @@ import requests
 import io
 import os
 import re
+import math
 from dotenv import load_dotenv
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -533,6 +534,212 @@ def take_photo():
     except Exception as e:
         print(f"Error taking photo: {e}")
         return None
+
+def read_soil_sensor():
+    """
+    Read the soil sensor data (moisture, temperature, etc.).
+    Returns:
+        dict: Dictionary containing soil sensor readings or None if failed
+    """
+    if bot is None:
+        print("Bot not connected!")
+        return None
+    
+    try:
+        # Use pin 59 for soil sensor readings (standard pin for soil sensor)
+        SOIL_SENSOR_PIN = 59
+        
+        # Read analog value from soil sensor
+        bot.read_pin(pin_number=SOIL_SENSOR_PIN, pin_mode="analog")
+        
+        # Get the moisture value from pin reading (0-1023 range)
+        moisture_raw = bot.state["pins"].get(str(SOIL_SENSOR_PIN), {}).get("value", 0)
+        
+        # Convert to percentage (0-100%)
+        moisture_percent = (moisture_raw / 1023) * 100
+        
+        return {
+            "moisture": round(moisture_percent, 2),
+            "raw_value": moisture_raw
+        }
+    except Exception as e:
+        print(f"Error reading soil sensor: {e}")
+        return None
+
+def use_seed_injector(seeds_count=1, dispense_time=1.0):
+    """
+    Use the seed injector to plant a specific number of seeds.
+    Args:S
+        seeds_count (int): Number of seeds to plant
+        dispense_time (float): Time in seconds for each seed dispensing action
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if bot is None:
+        print("Bot not connected!")
+        return False
+    
+    try:
+        # First ensure we have the seed injector mounted
+        if not verify_tool() or not mount_tool("seed_injector"):
+            print("Failed to mount seed injector")
+            return False
+            
+        # PIN 10 is typically used for seed injection
+        SEED_PIN = 10
+        
+        print(f"Dispensing {seeds_count} seeds...")
+        
+        for i in range(seeds_count):
+            # Activate seed injector
+            bot.write_pin(pin_number=SEED_PIN, pin_value=1, pin_mode="digital")
+            time.sleep(dispense_time)  # Wait for seed to drop
+            bot.write_pin(pin_number=SEED_PIN, pin_value=0, pin_mode="digital")
+            
+            if i < seeds_count - 1:  # Don't wait after the last seed
+                time.sleep(0.5)  # Short pause between seeds
+        
+        return True
+    except Exception as e:
+        print(f"Error using seed injector: {e}")
+        # Safety: ensure pin is off
+        try:
+            bot.write_pin(pin_number=SEED_PIN, pin_value=0, pin_mode="digital")
+        except:
+            pass
+        return False
+
+def use_rotary_tool(speed=100, duration=5.0):
+    """
+    Activate the rotary tool for operations like weeding or soil working.
+    Args:
+        speed (int): Speed percentage for the rotary tool (0-100)
+        duration (float): How long to run the tool in seconds
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if bot is None:
+        print("Bot not connected!")
+        return False
+    
+    try:
+        # First ensure we have the rotary tool mounted
+        if not verify_tool() or not mount_tool("rotary_tool"):
+            print("Failed to mount rotary tool")
+            return False
+            
+        # PIN 11 is typically used for rotary tool control
+        ROTARY_TOOL_PIN = 11
+        
+        # Convert speed percentage to pin value (0-255 for analog)
+        pin_value = int((speed / 100) * 255)
+        
+        print(f"Activating rotary tool at {speed}% speed...")
+        
+        # Activate rotary tool
+        bot.write_pin(pin_number=ROTARY_TOOL_PIN, pin_value=pin_value, pin_mode="analog")
+        time.sleep(duration)
+        
+        # Turn off tool
+        bot.write_pin(pin_number=ROTARY_TOOL_PIN, pin_value=0, pin_mode="analog")
+        
+        return True
+    except Exception as e:
+        print(f"Error using rotary tool: {e}")
+        # Safety: ensure pin is off
+        try:
+            bot.write_pin(pin_number=ROTARY_TOOL_PIN, pin_value=0, pin_mode="analog")
+        except:
+            pass
+        return False
+
+def use_weeder(x, y, z, working_depth=-20, speed=100):
+    """
+    Use the weeder tool to remove weeds at a specific location.
+    Args:
+        x (float): X coordinate for weeding
+        y (float): Y coordinate for weeding
+        z (float): Z coordinate approach height
+        working_depth (float): How deep to insert the weeder tool (negative number, default -20mm)
+        speed (int): Speed percentage for the rotary tool (0-100)
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if bot is None:
+        print("Bot not connected!")
+        return False
+    
+    try:
+        # First ensure we have the weeder tool mounted
+        if not verify_tool() or not mount_tool("weeder"):
+            print("Failed to mount weeder")
+            return False
+
+        # Get current position
+        current_pos = get_position()
+        if current_pos is None:
+            bot.send_message("Could not get current position", "error")
+            return False
+
+        bot.send_message(f"Starting weeding sequence at ({x}, {y})")
+        
+        # Move to safe height first
+        safe_z = max(current_pos[2], z, -100)  # Use highest Z of current, target, or -100
+        bot.send_message(f"Moving to safe height {safe_z}")
+        bot.move_absolute(current_pos[0], current_pos[1], safe_z)
+        time.sleep(2)  # Wait for Z movement
+        
+        # Move to target X,Y at safe height
+        bot.send_message(f"Moving to target position at safe height")
+        bot.move_absolute(x, y, safe_z)
+        time.sleep(3)  # Wait for XY movement
+        
+        # Start rotary tool before inserting
+        bot.send_message("Activating weeder tool")
+        WEEDER_PIN = 11  # Weeder uses the same pin as rotary tool
+        pin_value = int((speed / 100) * 255)
+        bot.write_pin(pin_number=WEEDER_PIN, pin_value=pin_value, pin_mode="analog")
+        time.sleep(1)  # Let tool spin up
+        
+        # Move down to working depth
+        bot.send_message(f"Lowering tool to working depth {working_depth}")
+        final_z = z + working_depth
+        bot.move_absolute(x, y, final_z)
+        time.sleep(3)  # Allow time for weeding action
+        
+        # Small circular movement to ensure weed removal
+        radius = 5  # 5mm radius
+        bot.send_message("Performing weeding pattern")
+        for angle in [0, 90, 180, 270]:  # 4-point circle
+            rad = math.radians(angle)
+            dx = radius * math.cos(rad)
+            dy = radius * math.sin(rad)
+            bot.move_absolute(x + dx, y + dy, final_z)
+            time.sleep(1)
+        
+        # Return to center
+        bot.move_absolute(x, y, final_z)
+        time.sleep(1)
+        
+        # Move back up to safe height
+        bot.send_message("Moving back to safe height")
+        bot.move_absolute(x, y, safe_z)
+        time.sleep(2)
+        
+        # Turn off tool
+        bot.write_pin(pin_number=WEEDER_PIN, pin_value=0, pin_mode="analog")
+        bot.send_message("Weeding sequence completed")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error using weeder: {e}")
+        # Safety: ensure tool is off
+        try:
+            bot.write_pin(pin_number=11, pin_value=0, pin_mode="analog")
+        except:
+            pass
+        return False
 
 def main():
     # Start connection in background thread

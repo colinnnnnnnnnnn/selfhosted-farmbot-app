@@ -1,5 +1,20 @@
 from rest_framework import serializers
-from .models import Sequence, Step
+from django.urls import reverse
+from .models import Sequence, Step, Photo
+
+class PhotoModelSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Photo
+        fields = ['id', 'farmbot_id', 'created_at', 'coordinates', 'meta_data', 'url']
+        read_only_fields = ['created_at']
+    
+    def get_url(self, obj):
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(f'/farm_images/{obj.filename}')
+        return f'/farm_images/{obj.filename}'
 
 class PositionSerializer(serializers.Serializer):
     x = serializers.FloatField(required=True)
@@ -37,6 +52,25 @@ class StepSerializer(serializers.ModelSerializer):
     class Meta:
         model = Step
         fields = ['id', 'command', 'parameters', 'order']
+
+class SeedInjectorSerializer(serializers.Serializer):
+    seeds_count = serializers.IntegerField(required=False, default=1, min_value=1)
+    dispense_time = serializers.FloatField(required=False, default=1.0, min_value=0.1)
+
+class RotaryToolSerializer(serializers.Serializer):
+    speed = serializers.IntegerField(required=False, default=100, min_value=0, max_value=100)
+    duration = serializers.FloatField(required=False, default=5.0, min_value=0.1)
+
+class SoilSensorSerializer(serializers.Serializer):
+    moisture = serializers.FloatField(read_only=True)
+    raw_value = serializers.IntegerField(read_only=True)
+
+class WeederSerializer(serializers.Serializer):
+    x = serializers.FloatField(required=True)
+    y = serializers.FloatField(required=True)
+    z = serializers.FloatField(required=True)
+    working_depth = serializers.FloatField(required=False, default=-20)
+    speed = serializers.IntegerField(required=False, default=100, min_value=0, max_value=100)
 
 class SequenceSerializer(serializers.ModelSerializer):
     steps = StepSerializer(many=True)
