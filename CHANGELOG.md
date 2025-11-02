@@ -17,3 +17,4 @@ Other changes:
 * Added Docker support with docker-compose
 * Implemented WebSocket for live updates
 * Added a photo gallery to conveniently view all photos
+* Implemented sequence editor API
