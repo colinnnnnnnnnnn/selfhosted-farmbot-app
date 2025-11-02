@@ -95,35 +95,19 @@ function App() {
 
   useEffect(() => {
     fetchPosition();
+    
     // Load photos from localStorage on page refresh
     const savedPhotos = localStorage.getItem('farmbot-photos');
     if (savedPhotos) {
       try {
         const parsedPhotos = JSON.parse(savedPhotos);
-        // Load the latest photo for all saved photos
-        const loadLatestPhoto = async () => {
-          try {
-            const response = await axios.get(`${API_BASE}/get-latest-photo/`, {
-              responseType: 'blob'
-            });
-            const imageUrl = URL.createObjectURL(response.data);
-            
-            // Update all photos with the latest image
-            const photosWithImages = parsedPhotos.map(photo => ({
-              ...photo,
-              url: imageUrl
-            }));
-            setPhotoData(photosWithImages);
-          } catch (error) {
-            console.error('Error loading latest photo:', error);
-            setPhotoData(parsedPhotos);
-          }
-        };
-        loadLatestPhoto();
+        // Photos already have their URLs saved, just load them
+        setPhotoData(parsedPhotos);
       } catch (error) {
         console.error('Error loading saved photos:', error);
       }
     }
+    
     // Optionally, poll every few seconds:
     // const interval = setInterval(fetchPosition, 5000);
     // return () => clearInterval(interval);
@@ -297,29 +281,31 @@ function App() {
   const handleTakePhoto = async () => {
     setPhotoLoading(true);
     try {
-      const response = await axios.get(`${API_BASE}/take-photo/`, {
-        responseType: 'blob'
-      });
+      // Request JSON response instead of blob to get photo metadata
+      const response = await axios.get(`${API_BASE}/take-photo/`);
       
-      // Create object URL from blob
-      const imageUrl = URL.createObjectURL(response.data);
+      // The response contains photo metadata including the image URL
+      const photoResponse = response.data;
+      
+      console.log('Photo response:', photoResponse);
+      console.log('Photo URL:', photoResponse.url);
+      
       const newPhoto = {
-        id: Date.now(), // Unique ID for React key
-        url: imageUrl,
-        position: { ...position }, // Capture current position
-        timestamp: new Date().toISOString()
+        id: photoResponse.id || Date.now(), // Use backend ID if available
+        url: photoResponse.url, // URL from backend
+        farmbot_id: photoResponse.farmbot_id,
+        position: photoResponse.coordinates || { ...position }, // Use backend coordinates or current position
+        timestamp: photoResponse.created_at || new Date().toISOString()
       };
+      
+      console.log('New photo object:', newPhoto);
       
       // Add new photo to the array (stacking/overlapping)
       const updatedPhotos = [...photoData, newPhoto];
       setPhotoData(updatedPhotos);
       
-      // Save to localStorage (with filename for persistence)
-      const photosToSave = updatedPhotos.map(photo => ({
-        ...photo,
-        url: photo.url ? 'latest' : null // Use 'latest' to indicate we should load the latest photo
-      }));
-      localStorage.setItem('farmbot-photos', JSON.stringify(photosToSave));
+      // Save to localStorage
+      localStorage.setItem('farmbot-photos', JSON.stringify(updatedPhotos));
       
       setMoveStatus(`Photo taken successfully (${updatedPhotos.length} photos)`);
     } catch (error) {
@@ -461,17 +447,26 @@ function App() {
             width: IMAGE_WIDTH_PX,
             height: IMAGE_HEIGHT_PX,
             overflow: 'hidden',
-            zIndex: 10 + index // Stack photos with increasing z-index
+            zIndex: 10 + index, // Stack photos with increasing z-index
           }}
         >
           {photo.url ? (
             <img
               src={photo.url}
-              alt={`FarmBot Photo ${index + 1}`}
+              alt={`FarmBot Photo ${photo.farmbot_id || index + 1}`}
               style={{
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover'
+              }}
+              onLoad={() => {
+                console.log('Image loaded successfully:', photo.url);
+              }}
+              onError={(e) => {
+                // If image fails to load, show placeholder
+                console.error('Image failed to load:', photo.url);
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = `<div style="width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-size: 14px;"><div>📷</div><div>Photo ${photo.farmbot_id || index + 1}</div></div>`;
               }}
             />
           ) : (
@@ -479,15 +474,17 @@ function App() {
               style={{
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.3)',
+                backgroundColor: 'rgba(0,0,0,0.5)',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
                 fontSize: '14px'
               }}
             >
-              Photo {index + 1}
+              <div>📷</div>
+              <div>Photo {photo.farmbot_id || index + 1}</div>
             </div>
           )}
         </div>
