@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    SequenceViewSet,
+    SequenceViewSet, PhotoViewSet,
     connect_view, move_absolute_view, move_relative_view,
     emergency_lock_view, emergency_unlock_view, find_home_view,
     go_to_home_view, power_off_view, reboot_view, servo_angle_view,
@@ -13,6 +13,7 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r'sequences', SequenceViewSet, basename='sequence')
+router.register(r'photos', PhotoViewSet, basename='photo')
 
 urlpatterns = [
     path('', include(router.urls)),
