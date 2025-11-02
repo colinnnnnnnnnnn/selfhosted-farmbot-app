@@ -10,23 +10,54 @@ from django.contrib.auth.decorators import login_required
 import json
 import threading
 import time
-from .models import Sequence, Step
+from .models import Sequence, Step, Photo
 from .serializers import (
     PositionSerializer, ServoAngleSerializer, MessageSerializer, 
     LuaScriptSerializer, WateringSerializer, DispensingSerializer,
-    ToolSerializer, SequenceSerializer
+    ToolSerializer, SequenceSerializer, SeedInjectorSerializer,
+    RotaryToolSerializer, SoilSensorSerializer, PhotoModelSerializer,
+    WeederSerializer
 )
 from farmlib.wrapper import (
     connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock,
     find_home, go_to_home, power_off, reboot, servo_angle, lua_script, 
     get_position, send_message, take_photo, water_plant, mount_tool, 
-    dismount_tool, dispense
+    dismount_tool, dispense, use_seed_injector, use_rotary_tool, read_soil_sensor,
+    use_weeder
 )
 
 # Initialize bot connection when server starts
 connection_thread = threading.Thread(target=connect_bot)
 connection_thread.daemon = True
 connection_thread.start()
+
+class PhotoViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for viewing and managing photos taken by the FarmBot.
+    """
+    queryset = Photo.objects.all()
+    serializer_class = PhotoModelSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset().order_by('-created_at')
+        serializer = self.get_serializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        photo = self.get_object()
+        try:
+            # Delete the actual file
+            import os
+            if os.path.exists(photo.image_path):
+                os.remove(photo.image_path)
+            # Delete the database entry
+            return super().destroy(request, *args, **kwargs)
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to delete photo: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class SequenceViewSet(viewsets.ModelViewSet):
     serializer_class = SequenceSerializer
@@ -399,14 +430,34 @@ def take_photo_view(request):
         if result is None:
             return Response({"error": "Could not take photo"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        # Проверяем формат ответа в URL-параметре
-        response_format = request.query_params.get('format', 'image')
+        # Get current position for photo metadata
+        position = get_position()
+        coordinates = {}
+        if position:
+            coordinates = {
+                'x': position[0],
+                'y': position[1],
+                'z': position[2]
+            }
+
+        # Create photo record
+        photo = Photo.objects.create(
+            image_path=f"farm_images/image_{result['id']}.jpg",
+            farmbot_id=result['id'],
+            coordinates=coordinates,
+            meta_data={
+                'content_type': result['content_type']
+            }
+        )
+        
+        # Check response format
+        response_format = request.query_params.get('format', 'json')
         
         if response_format == 'json':
-            # Возвращаем только URL
-            return Response({"url": result['url']}, status=status.HTTP_200_OK)
+            serializer = PhotoModelSerializer(photo, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            # Возвращаем само изображение
+            # Return the image directly
             from django.http import HttpResponse
             return HttpResponse(
                 result['image'],
@@ -445,5 +496,89 @@ def clear_photos_view(request):
             "deleted_count": deleted_count
         }, status=status.HTTP_200_OK)
         
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def seed_injector_view(request):
+    """Use the seed injector to plant seeds"""
+    serializer = SeedInjectorSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = use_seed_injector(
+            seeds_count=data.get('seeds_count', 1),
+            dispense_time=data.get('dispense_time', 1.0)
+        )
+        if success:
+            return Response({"status": "seeds planted successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to plant seeds"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def rotary_tool_view(request):
+    """Use the rotary tool"""
+    serializer = RotaryToolSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = use_rotary_tool(
+            speed=data.get('speed', 100),
+            duration=data.get('duration', 5.0)
+        )
+        if success:
+            return Response({"status": "rotary tool operation completed"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to use rotary tool"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def soil_sensor_view(request):
+    """Get soil sensor readings"""
+    try:
+        readings = read_soil_sensor()
+        if readings is None:
+            return Response({"error": "Could not read soil sensor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        serializer = SoilSensorSerializer(readings)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def weeder_view(request):
+    """Use the weeder tool to remove weeds at a specific location"""
+    serializer = WeederSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = use_weeder(
+            x=data['x'],
+            y=data['y'],
+            z=data['z'],
+            working_depth=data.get('working_depth', -20),
+            speed=data.get('speed', 100)
+        )
+        if success:
+            return Response({"status": "weeding completed successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to complete weeding operation"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
