@@ -31,9 +31,6 @@ const ControlButtons = ({
         <button className="stone-button" onClick={handleClearPhotos}>
           Clear Photos ({photoCount})
         </button>
-        <button className="stone-button" onClick={handleLogout} style={{ backgroundColor: '#dc3545' }}>
-          Logout
-        </button>
       </div>
     </div>
   );

@@ -177,7 +177,6 @@ function App() {
             handleHome={handleHome}
             handleTakePhoto={handleTakePhoto}
             handleClearPhotos={handleClearPhotos}
-            handleLogout={handleLogout}
             loading={loading}
             photoLoading={photoLoading}
             photoCount={photoData.length}
