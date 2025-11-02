@@ -13,7 +13,7 @@ import FarmBotMap from './components/FarmBotMap';
 import BotVisibilityToggle from './components/BotVisibilityToggle';
 import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
 import { takePhoto, clearAllPhotos } from './services/photoService';
-import { waterPlant } from './services/actionService';
+import { waterPlant, weed } from './services/actionService';
 
 function App() {
   // Authentication
@@ -129,6 +129,11 @@ function App() {
     await waterPlant(setMoveStatus);
   };
 
+  const handleWeeding = async () => {
+    // Use current position; keep params minimal
+    await weed({ x: position.x, y: position.y, z: position.z }, setMoveStatus);
+  };
+
   const handleTakePhoto = async () => {
     setPhotoLoading(true);
     try {
@@ -167,6 +172,7 @@ function App() {
             handleGet={handleGet}
             handleUnlock={handleUnlock}
             handleWaterPlant={handleWaterPlant}
+            handleWeeding={handleWeeding}
             handleHome={handleHome}
             handleTakePhoto={handleTakePhoto}
             handleClearPhotos={handleClearPhotos}

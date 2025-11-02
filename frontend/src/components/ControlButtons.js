@@ -4,6 +4,7 @@ const ControlButtons = ({
   handleGet, 
   handleUnlock, 
   handleWaterPlant, 
+  handleWeeding,
   handleHome, 
   handleTakePhoto, 
   handleClearPhotos,
@@ -20,6 +21,7 @@ const ControlButtons = ({
         </button>
         <button className="stone-button" onClick={handleUnlock}>Unlock</button>
         <button className="stone-button" onClick={handleWaterPlant}>Water</button>
+        <button className="stone-button" onClick={handleWeeding}>Weed here</button>
         <button className="stone-button" onClick={handleHome}>Home</button>
       </div>
       <div style={{ display: 'flex', gap: 20 }}>
