@@ -13,7 +13,7 @@ New tool functionalities:
 Other changes:
 * Created a run script to quickly setup everything
 * OAuth2 implementation (for logging in with Google or Github)
-* Migrated to Daphne as default ASGI server????
+* Migrated to Daphne as default ASGI server
 * Added Docker support with docker-compose
 * Implemented WebSocket for live updates
 * Added a photo gallery to conveniently view all photos
