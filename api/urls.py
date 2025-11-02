@@ -7,7 +7,8 @@ from .views import (
     go_to_home_view, power_off_view, reboot_view, servo_angle_view,
     lua_script_view, get_position_view, send_message_view, take_photo_view,
     register_view, login_view, logout_view, me_view, water_plant_view,
-    mount_tool_view, dismount_tool_view, dispense_view, clear_photos_view
+    mount_tool_view, dismount_tool_view, dispense_view, clear_photos_view,
+    seed_injector_view, rotary_tool_view, soil_sensor_view
 )
 
 router = DefaultRouter()
@@ -42,4 +43,7 @@ urlpatterns = [
     path('mount-tool/', mount_tool_view, name='mount-tool'),
     path('dismount-tool/', dismount_tool_view, name='dismount-tool'),
     path('dispense/', dispense_view, name='dispense'),
+    path('seed-injector/', seed_injector_view, name='seed-injector'),
+    path('rotary-tool/', rotary_tool_view, name='rotary-tool'),
+    path('soil-sensor/', soil_sensor_view, name='soil-sensor'),
 ]
