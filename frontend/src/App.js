@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import axios from './utils/axiosConfig';
-import { API_BASE } from './utils/axiosConfig';
 import './App.css';
 import LoginPage from './LoginPage';
 import { useAuth } from './hooks/useAuth';
@@ -13,6 +11,9 @@ import MoveRelativeForm from './components/MoveRelativeForm';
 import ManualJogPad from './components/ManualJogPad';
 import FarmBotMap from './components/FarmBotMap';
 import BotVisibilityToggle from './components/BotVisibilityToggle';
+import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
+import { takePhoto, clearAllPhotos } from './services/photoService';
+import { waterPlant } from './services/actionService';
 
 function App() {
   // Authentication
@@ -46,8 +47,7 @@ function App() {
 
   const handleGet = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/position/`);
-      const positionArray = response.data;
+      const positionArray = await getCurrentPosition();
       alert('GET response: ' + JSON.stringify(positionArray));
       
       if (Array.isArray(positionArray) && positionArray.length >= 3) {
@@ -68,53 +68,13 @@ function App() {
   const handleMove = async (e) => {
     e.preventDefault();
     setMoveStatus('');
-    try {
-      const target = {
-        x: Number(moveForm.x),
-        y: Number(moveForm.y),
-        z: Number(moveForm.z),
-        speed: Number(moveForm.speed)
-      };
-
-      await axios.post(`${API_BASE}/emergency-unlock/`);
-      console.log('Bot unlocked');
-
-      setTargetPosition(target);
-      setMoveStatus('Moving...');
-      
-      await axios.post(`${API_BASE}/move-absolute/`, target);
-      console.log('Move command sent:', target);
-      
-      let checks = 0;
-      const maxChecks = 10;
-      const checkPosition = async () => {
-        try {
-          const res = await axios.get(`${API_BASE}/position/`);
-          const arr = res.data;
-          if (Array.isArray(arr) && arr.length >= 2) {
-            const current = { x: arr[0], y: arr[1] };
-            setPosition(current);
-            const dx = Math.abs(current.x - target.x);
-            const dy = Math.abs(current.y - target.y);
-            const distance = Math.sqrt(dx*dx + dy*dy);
-            if (distance < 0.5) {
-              setMoveStatus('Reached target position');
-              return;
-            }
-          }
-        } catch {}
-        checks++;
-        if (checks < maxChecks) {
-          setTimeout(checkPosition, 1000);
-        } else {
-          setMoveStatus('Warning: Final position may not be exact');
-        }
-      };
-      setTimeout(checkPosition, 2000);
-    } catch (error) {
-      console.error('Error moving bot:', error);
-      setMoveStatus('Error: ' + error.message);
-    }
+    const target = {
+      x: Number(moveForm.x),
+      y: Number(moveForm.y),
+      z: Number(moveForm.z),
+      speed: Number(moveForm.speed)
+    };
+    await moveAbsolute(target, setPosition, setTargetPosition, setMoveStatus);
   };
 
   const handleInputChange = (e) => {
@@ -136,89 +96,21 @@ function App() {
   const handleMoveRelative = async (e) => {
     e.preventDefault();
     setMoveStatus('');
-    try {
-      const delta = {
-        x: Number(moveRelForm.dx),
-        y: Number(moveRelForm.dy),
-        z: Number(moveRelForm.dz),
-        speed: Number(moveRelForm.speed)
-      };
-      await axios.post(`${API_BASE}/emergency-unlock/`);
-      const expected = { x: position.x + delta.x, y: position.y + delta.y };
-      setTargetPosition(expected);
-      setMoveStatus('Moving (relative)...');
-      await axios.post(`${API_BASE}/move-relative/`, delta);
-
-      let checks = 0;
-      const maxChecks = 10;
-      const checkPosition = async () => {
-        try {
-          const res = await axios.get(`${API_BASE}/position/`);
-          const arr = res.data;
-          if (Array.isArray(arr) && arr.length >= 2) {
-            const current = { x: arr[0], y: arr[1] };
-            setPosition(current);
-            const dx = Math.abs(current.x - expected.x);
-            const dy = Math.abs(current.y - expected.y);
-            const distance = Math.sqrt(dx*dx + dy*dy);
-            if (distance < 0.5) { setMoveStatus('Reached target position'); return; }
-          }
-        } catch {}
-        checks++;
-        if (checks < maxChecks) setTimeout(checkPosition, 1000);
-        else setMoveStatus('Warning: Final position may not be exact');
-      };
-      setTimeout(checkPosition, 2000);
-    } catch (err) {
-      setMoveStatus('Error: ' + err.message);
-    }
+    const delta = {
+      x: Number(moveRelForm.dx),
+      y: Number(moveRelForm.dy),
+      z: Number(moveRelForm.dz),
+      speed: Number(moveRelForm.speed)
+    };
+    await moveRelative(delta, position, setPosition, setTargetPosition, setMoveStatus);
   };
 
-  const startNudge = (dx, dy, dz = 0) => {
+  const startNudge = async (dx, dy, dz = 0) => {
     if (nudgeIntervalId) return;
     const step = { x: dx, y: dy, z: dz };
     const speed = Number(moveRelForm.speed) || 100;
     setMoveStatus('Nudging...');
-    
-    const performNudge = async () => {
-      try {
-        await axios.post(`${API_BASE}/move-relative/`, { ...step, speed });
-        
-        const expected = { x: position.x + step.x, y: position.y + step.y };
-        setTargetPosition(expected);
-        
-        let checks = 0;
-        const maxChecks = 8;
-        const checkPosition = async () => {
-          try {
-            const res = await axios.get(`${API_BASE}/position/`);
-            const arr = res.data;
-            if (Array.isArray(arr) && arr.length >= 2) {
-              const current = { x: arr[0], y: arr[1] };
-              setPosition(current);
-              const dx = Math.abs(current.x - expected.x);
-              const dy = Math.abs(current.y - expected.y);
-              const distance = Math.sqrt(dx*dx + dy*dy);
-              if (distance < 0.5) {
-                setMoveStatus('Nudge complete');
-                return;
-              }
-            }
-          } catch {}
-          checks++;
-          if (checks < maxChecks) {
-            setTimeout(checkPosition, 1000);
-          } else {
-            setMoveStatus('Nudge timeout');
-          }
-        };
-        setTimeout(checkPosition, 500);
-      } catch (e) {
-        setMoveStatus('Nudge failed');
-      }
-    };
-    
-    performNudge();
+    await nudge(step, speed, position, setPosition, setTargetPosition, setMoveStatus);
   };
 
   const stopNudge = () => {
@@ -230,112 +122,28 @@ function App() {
   };
 
   const handleUnlock = async () => {
-    try { 
-      await axios.post(`${API_BASE}/emergency-unlock/`); 
-      setMoveStatus('Unlocked'); 
-    }
-    catch (e) { 
-      setMoveStatus('Unlock failed'); 
-    }
+    await unlock(setMoveStatus);
   };
 
   const handleWaterPlant = async () => {
-    try {
-      setMoveStatus('Watering');
-      await axios.post(`${API_BASE}/water-plant/`);
-      setMoveStatus('Watering complete');
-    } catch (error) {
-      console.log('Error watering:', error);
-      setMoveStatus('Watering failed');
-    }
+    await waterPlant(setMoveStatus);
   };
 
   const handleTakePhoto = async () => {
     setPhotoLoading(true);
     try {
-      const response = await axios.get(`${API_BASE}/take-photo/`);
-      const photoResponse = response.data;
-      
-      console.log('Photo response:', photoResponse);
-      console.log('Photo URL:', photoResponse.url);
-      
-      const newPhoto = {
-        id: photoResponse.id || Date.now(),
-        url: photoResponse.url,
-        farmbot_id: photoResponse.farmbot_id,
-        position: photoResponse.coordinates || { ...position },
-        timestamp: photoResponse.created_at || new Date().toISOString()
-      };
-      
-      console.log('New photo object:', newPhoto);
-      
-      const updatedPhotos = [...photoData, newPhoto];
-      setPhotoData(updatedPhotos);
-      savePhotos(updatedPhotos);
-      
-      setMoveStatus(`Photo taken successfully (${updatedPhotos.length} photos)`);
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      setMoveStatus('Photo failed');
+      await takePhoto(position, photoData, setPhotoData, savePhotos, setMoveStatus);
     } finally {
       setPhotoLoading(false);
     }
   };
 
   const handleClearPhotos = async () => {
-    try {
-      await axios.post(`${API_BASE}/clear-photos/`);
-      
-      photoData.forEach(photo => {
-        if (photo.url) {
-          URL.revokeObjectURL(photo.url);
-        }
-      });
-      
-      clearPhotos();
-      setMoveStatus('All photos cleared');
-    } catch (error) {
-      console.error('Error clearing photos:', error);
-      setMoveStatus('Error clearing photos');
-    }
+    await clearAllPhotos(photoData, clearPhotos, setMoveStatus);
   };
 
   const handleHome = async () => {
-    try {
-      await axios.post(`${API_BASE}/find-home/`);
-      const target = { x: 0, y: 0 };
-      setTargetPosition(target);
-      setMoveStatus('Homing...');
-
-      let checks = 0;
-      const maxChecks = 20;
-      const checkHome = async () => {
-        try {
-          const res = await axios.get(`${API_BASE}/position/`);
-          const arr = res.data;
-          if (Array.isArray(arr) && arr.length >= 2) {
-            const current = { x: arr[0], y: arr[1] };
-            setPosition(current);
-            const dx = Math.abs(current.x - 0);
-            const dy = Math.abs(current.y - 0);
-            const distance = Math.sqrt(dx*dx + dy*dy);
-            if (distance < 0.5) {
-              setMoveStatus('Reached home');
-              return;
-            }
-          }
-        } catch {}
-        checks++;
-        if (checks < maxChecks) {
-          setTimeout(checkHome, 1000);
-        } else {
-          setMoveStatus('Warning: Did not reach home exactly');
-        }
-      };
-      setTimeout(checkHome, 2000);
-    } catch (e) {
-      setMoveStatus('Home failed');
-    }
+    await goHome(setPosition, setTargetPosition, setMoveStatus);
   };
 
   // Show login page if not authenticated
