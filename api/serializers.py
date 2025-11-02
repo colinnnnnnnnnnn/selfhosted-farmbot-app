@@ -65,6 +65,13 @@ class SoilSensorSerializer(serializers.Serializer):
     moisture = serializers.FloatField(read_only=True)
     raw_value = serializers.IntegerField(read_only=True)
 
+class WeederSerializer(serializers.Serializer):
+    x = serializers.FloatField(required=True)
+    y = serializers.FloatField(required=True)
+    z = serializers.FloatField(required=True)
+    working_depth = serializers.FloatField(required=False, default=-20)
+    speed = serializers.IntegerField(required=False, default=100, min_value=0, max_value=100)
+
 class SequenceSerializer(serializers.ModelSerializer):
     steps = StepSerializer(many=True)
 
