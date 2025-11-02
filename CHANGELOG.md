@@ -5,7 +5,7 @@
 #### What's new
 New tool functionalities:
 * Implemented Watering Tool functionality (frontend & backend)
-* Implemented Weeder Tool functionality (front & back)
+* Implemented Weeder Tool functionality (frontend & backend)
 * Added support for the Rotary Tool (backend)
 * Added Seed Injector capabilities (backend)
 * Added Soil Sensor readings (backend)
