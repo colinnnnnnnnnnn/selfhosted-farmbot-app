@@ -10,12 +10,12 @@ from django.contrib.auth.decorators import login_required
 import json
 import threading
 import time
-from .models import Sequence, Step
+from .models import Sequence, Step, Photo
 from .serializers import (
     PositionSerializer, ServoAngleSerializer, MessageSerializer, 
     LuaScriptSerializer, WateringSerializer, DispensingSerializer,
     ToolSerializer, SequenceSerializer, SeedInjectorSerializer,
-    RotaryToolSerializer, SoilSensorSerializer
+    RotaryToolSerializer, SoilSensorSerializer, PhotoModelSerializer
 )
 from farmlib.wrapper import (
     connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock,
@@ -28,6 +28,34 @@ from farmlib.wrapper import (
 connection_thread = threading.Thread(target=connect_bot)
 connection_thread.daemon = True
 connection_thread.start()
+
+class PhotoViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for viewing and managing photos taken by the FarmBot.
+    """
+    queryset = Photo.objects.all()
+    serializer_class = PhotoModelSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset().order_by('-created_at')
+        serializer = self.get_serializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        photo = self.get_object()
+        try:
+            # Delete the actual file
+            import os
+            if os.path.exists(photo.image_path):
+                os.remove(photo.image_path)
+            # Delete the database entry
+            return super().destroy(request, *args, **kwargs)
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to delete photo: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class SequenceViewSet(viewsets.ModelViewSet):
     serializer_class = SequenceSerializer
@@ -400,14 +428,34 @@ def take_photo_view(request):
         if result is None:
             return Response({"error": "Could not take photo"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        # Проверяем формат ответа в URL-параметре
-        response_format = request.query_params.get('format', 'image')
+        # Get current position for photo metadata
+        position = get_position()
+        coordinates = {}
+        if position:
+            coordinates = {
+                'x': position[0],
+                'y': position[1],
+                'z': position[2]
+            }
+
+        # Create photo record
+        photo = Photo.objects.create(
+            image_path=f"farm_images/image_{result['id']}.jpg",
+            farmbot_id=result['id'],
+            coordinates=coordinates,
+            meta_data={
+                'content_type': result['content_type']
+            }
+        )
+        
+        # Check response format
+        response_format = request.query_params.get('format', 'json')
         
         if response_format == 'json':
-            # Возвращаем только URL
-            return Response({"url": result['url']}, status=status.HTTP_200_OK)
+            serializer = PhotoModelSerializer(photo, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            # Возвращаем само изображение
+            # Return the image directly
             from django.http import HttpResponse
             return HttpResponse(
                 result['image'],
