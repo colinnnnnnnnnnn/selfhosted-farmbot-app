@@ -14,13 +14,14 @@ from .models import Sequence, Step
 from .serializers import (
     PositionSerializer, ServoAngleSerializer, MessageSerializer, 
     LuaScriptSerializer, WateringSerializer, DispensingSerializer,
-    ToolSerializer, SequenceSerializer
+    ToolSerializer, SequenceSerializer, SeedInjectorSerializer,
+    RotaryToolSerializer, SoilSensorSerializer
 )
 from farmlib.wrapper import (
     connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock,
     find_home, go_to_home, power_off, reboot, servo_angle, lua_script, 
     get_position, send_message, take_photo, water_plant, mount_tool, 
-    dismount_tool, dispense
+    dismount_tool, dispense, use_seed_injector, use_rotary_tool, read_soil_sensor
 )
 
 # Initialize bot connection when server starts
@@ -445,5 +446,64 @@ def clear_photos_view(request):
             "deleted_count": deleted_count
         }, status=status.HTTP_200_OK)
         
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def seed_injector_view(request):
+    """Use the seed injector to plant seeds"""
+    serializer = SeedInjectorSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = use_seed_injector(
+            seeds_count=data.get('seeds_count', 1),
+            dispense_time=data.get('dispense_time', 1.0)
+        )
+        if success:
+            return Response({"status": "seeds planted successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to plant seeds"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def rotary_tool_view(request):
+    """Use the rotary tool"""
+    serializer = RotaryToolSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = use_rotary_tool(
+            speed=data.get('speed', 100),
+            duration=data.get('duration', 5.0)
+        )
+        if success:
+            return Response({"status": "rotary tool operation completed"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to use rotary tool"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def soil_sensor_view(request):
+    """Get soil sensor readings"""
+    try:
+        readings = read_soil_sensor()
+        if readings is None:
+            return Response({"error": "Could not read soil sensor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        serializer = SoilSensorSerializer(readings)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
