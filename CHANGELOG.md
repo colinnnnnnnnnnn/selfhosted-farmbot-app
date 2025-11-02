@@ -11,6 +11,7 @@ New tool functionalities:
 * Added Soil Sensor readings (backend)
   
 Other changes:
+* Created a run script to quickly setup everything
 * OAuth2 implementation (for logging in with Google or Github)
 * Migrated to Daphne as default ASGI server????
 * Added Docker support with docker-compose
