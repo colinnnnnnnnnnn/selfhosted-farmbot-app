@@ -15,13 +15,15 @@ from .serializers import (
     PositionSerializer, ServoAngleSerializer, MessageSerializer, 
     LuaScriptSerializer, WateringSerializer, DispensingSerializer,
     ToolSerializer, SequenceSerializer, SeedInjectorSerializer,
-    RotaryToolSerializer, SoilSensorSerializer, PhotoModelSerializer
+    RotaryToolSerializer, SoilSensorSerializer, PhotoModelSerializer,
+    WeederSerializer
 )
 from farmlib.wrapper import (
     connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock,
     find_home, go_to_home, power_off, reboot, servo_angle, lua_script, 
     get_position, send_message, take_photo, water_plant, mount_tool, 
-    dismount_tool, dispense, use_seed_injector, use_rotary_tool, read_soil_sensor
+    dismount_tool, dispense, use_seed_injector, use_rotary_tool, read_soil_sensor,
+    use_weeder
 )
 
 # Initialize bot connection when server starts
@@ -553,5 +555,30 @@ def soil_sensor_view(request):
         
         serializer = SoilSensorSerializer(readings)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def weeder_view(request):
+    """Use the weeder tool to remove weeds at a specific location"""
+    serializer = WeederSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        data = serializer.validated_data
+        success = use_weeder(
+            x=data['x'],
+            y=data['y'],
+            z=data['z'],
+            working_depth=data.get('working_depth', -20),
+            speed=data.get('speed', 100)
+        )
+        if success:
+            return Response({"status": "weeding completed successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to complete weeding operation"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
