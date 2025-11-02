@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from api.views import social_auth_callback_view
 
 urlpatterns = [
@@ -25,3 +27,15 @@ urlpatterns = [
     path('social-auth-callback/', social_auth_callback_view, name='social_auth_callback'),
     path('api/', include('api.urls')),
 ]
+
+# Serve farm_images in development
+if settings.DEBUG:
+    from django.views.static import serve
+    from django.urls import re_path
+    import os
+    
+    urlpatterns += [
+        re_path(r'^farm_images/(?P<path>.*)$', serve, {
+            'document_root': os.path.join(settings.BASE_DIR, 'farm_images'),
+        }),
+    ]
