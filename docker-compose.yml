@@ -21,4 +21,8 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000/api}
     command: sh -c "npm install && npm start"
