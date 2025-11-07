@@ -424,7 +424,7 @@ def dispense_view(request):
 @permission_classes([AllowAny])
 @authentication_classes([])
 def take_photo_view(request):
-    """Take a photo using FarmBot's camera"""
+    """Take a photo using FarmBot's camera and retrieve the most recent photo from FarmBot Web App"""
     try:
         result = take_photo()
         if result is None:
@@ -440,13 +440,14 @@ def take_photo_view(request):
                 'z': position[2]
             }
 
-        # Create photo record
+        # Create photo record with the most recent photo ID
         photo = Photo.objects.create(
             image_path=f"farm_images/image_{result['id']}.jpg",
             farmbot_id=result['id'],
             coordinates=coordinates,
             meta_data={
-                'content_type': result['content_type']
+                'content_type': result['content_type'],
+                'source': 'farmbot_web_app'
             }
         )
         

@@ -467,7 +467,7 @@ def dispense(milliliters, tool_name=None, pin=None):
         return False
 
 def take_photo():
-    """Take a photo, download it by integer ID, save and return it."""
+    """Take a photo and get the most recent photo from the FarmBot Web App."""
     if bot is None or not connection_event.is_set():
         if not connect_bot():
             print("Bot not connected!")
@@ -477,34 +477,36 @@ def take_photo():
         # Trigger camera capture
         bot.take_photo()
 
-        # Give the server time to process the photo to avoid placeholder
+        # Give the server time to process the photo
         time.sleep(10)
 
-        # Load current counter
-        image_id = get_photo_counter()
+        # Get the most recent photo from the API
         latest_url = None
-
-        # Poll API until that specific image ID becomes available
         for _ in range(30):  # ~30s timeout
             try:
                 if api_server and bot_token:
+                    # Get all images and sort by ID to get the most recent one
                     resp = requests.get(
-                        f"{api_server}/api/images/{image_id}",
+                        f"{api_server}/api/images",
                         headers={"Authorization": f"Bearer {bot_token}"},
                         timeout=10
                     )
                     if resp.status_code == 200:
                         data = resp.json()
-                        url = data.get('attachment_url') or data.get('url')
-                        if url:
-                            latest_url = url
-                            break
+                        if isinstance(data, list) and len(data) > 0:
+                            # Sort by ID in descending order and get the first one
+                            latest_image = sorted(data, key=lambda x: x.get('id', 0), reverse=True)[0]
+                            image_id = latest_image.get('id')
+                            url = latest_image.get('attachment_url') or latest_image.get('url')
+                            if url:
+                                latest_url = url
+                                break
             except Exception as e:
-                print(f"Error fetching image {image_id}: {e}")
+                print(f"Error fetching latest image: {e}")
             time.sleep(1)
 
         if not latest_url:
-            print(f"Timeout waiting for image {image_id}")
+            print("Timeout waiting for latest image")
             return None
 
         # Download the image from its signed URL
