@@ -37,3 +37,11 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.timestamp} - {self.user} - {self.action}"
+
+class NotificationPreference(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    enabled = models.BooleanField(default=True)
+    report_frequency = models.CharField(max_length=10, choices=[('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly')], default='daily')
+
+    def __str__(self):
+        return f"NotificationPreference({self.user.username}, enabled={self.enabled}, frequency={self.report_frequency})"
