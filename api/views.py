@@ -43,6 +43,7 @@ def export_auditlog_view(request):
             for log in logs:
                 line = f"{log.timestamp} | {log.user.username if log.user else ''} | {log.action} | {log.object_id} | {log.details}\n"
                 response.write(line)
+            AuditLog.objects.create(user=request.user if request.user.is_authenticated else None, action="export_auditlog", details="Exported audit log as .log file.")
             return response
         else:
             response = HttpResponse(content_type='text/csv')
@@ -57,6 +58,7 @@ def export_auditlog_view(request):
                     log.object_id,
                     log.details
                 ])
+            AuditLog.objects.create(user=request.user if request.user.is_authenticated else None, action="export_auditlog", details="Exported audit log as CSV.")
             return response
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -293,8 +295,20 @@ def move_absolute_view(request):
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
         move_absolute(data['x'], data['y'], data['z'], speed)
+        
+        AuditLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            action="move_absolute",
+            details=f"Moved to ({data['x']}, {data['y']}, {data['z']}) at speed {speed}."
+        )
         return Response({"status": "moving"}, status=status.HTTP_200_OK)
     except Exception as e:
+        
+        AuditLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            action="move_absolute_failed",
+            details=str(e)
+        )
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
@@ -319,8 +333,18 @@ def move_relative_view(request):
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
         move_relative(data['x'], data['y'], data['z'], speed)
+        AuditLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            action="move_relative",
+            details=f"Moved relative ({data['x']}, {data['y']}, {data['z']}) at speed {speed}."
+        )
         return Response({"status": "moving"}, status=status.HTTP_200_OK)
     except Exception as e:
+        AuditLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            action="move_relative_failed",
+            details=str(e)
+        )
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
