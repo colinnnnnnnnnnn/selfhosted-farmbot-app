@@ -1,6 +1,7 @@
 import os
 import zipfile
 import io
+from .models import AuditLog
 # Export all photos as a ZIP file
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -20,6 +21,7 @@ def export_photos_zip_view(request):
         zip_buffer.seek(0)
         response = HttpResponse(zip_buffer, content_type='application/zip')
         response['Content-Disposition'] = 'attachment; filename="farmbot-photos.zip"'
+        AuditLog.objects.create(user=request.user if request.user.is_authenticated else None, action="export_photos_zip", details=f"Exported {len(image_files)} photos as ZIP.")
         return response
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
