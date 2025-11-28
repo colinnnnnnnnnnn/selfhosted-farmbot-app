@@ -1,3 +1,33 @@
+from .models import AuditLog
+import csv
+from django.http import HttpResponse
+# Export audit logs as CSV
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def export_auditlog_view(request):
+    format = request.query_params.get('format', 'csv')
+    logs = AuditLog.objects.all().order_by('-timestamp')
+    if format == 'log':
+        response = HttpResponse(content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="auditlog.log"'
+        for log in logs:
+            line = f"{log.timestamp} | {log.user.username if log.user else ''} | {log.action} | {log.object_id} | {log.details}\n"
+            response.write(line)
+        return response
+    else:
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="auditlog.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['timestamp', 'user', 'action', 'object_id', 'details'])
+        for log in logs:
+            writer.writerow([
+                log.timestamp,
+                log.user.username if log.user else '',
+                log.action,
+                log.object_id,
+                log.details
+            ])
+        return response
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, authentication_classes, action, throttle_classes
 from rest_framework.response import Response
