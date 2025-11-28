@@ -1,7 +1,8 @@
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, permission_classes, authentication_classes, action
+from rest_framework.decorators import api_view, permission_classes, authentication_classes, action, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
@@ -128,6 +129,7 @@ def social_auth_callback_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def register_view(request):
     username = request.data.get('username') or request.data.get('email')
     email = request.data.get('email') or username
@@ -143,6 +145,7 @@ def register_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def login_view(request):
     username = request.data.get('username') or request.data.get('email')
     password = request.data.get('password')
@@ -159,6 +162,7 @@ def login_view(request):
     return Response({"token": token.key}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def logout_view(request):
     try:
         Token.objects.filter(user=request.user).delete()
@@ -167,6 +171,7 @@ def logout_view(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def me_view(request):
     user = request.user
     return Response({"id": user.id, "username": user.username, "email": user.email}, status=status.HTTP_200_OK)
@@ -174,6 +179,7 @@ def me_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def connect_view(request):
     """Connect to FarmBot"""
     try:
@@ -185,6 +191,7 @@ def connect_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def move_absolute_view(request):
     """Move FarmBot to absolute position"""
     serializer = PositionSerializer(data=request.data)
@@ -201,6 +208,7 @@ def move_absolute_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def move_relative_view(request):
     """Move FarmBot relative to current position"""
     serializer = PositionSerializer(data=request.data)
@@ -217,6 +225,7 @@ def move_relative_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def emergency_lock_view(request):
     """Emergency lock FarmBot"""
     try:
@@ -228,6 +237,7 @@ def emergency_lock_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def emergency_unlock_view(request):
     """Emergency unlock FarmBot"""
     try:
@@ -239,6 +249,7 @@ def emergency_unlock_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def find_home_view(request):
     """Find home position"""
     try:
@@ -250,6 +261,7 @@ def find_home_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def go_to_home_view(request):
     """Go to home position"""
     try:
@@ -261,6 +273,7 @@ def go_to_home_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def power_off_view(request):
     """Power off FarmBot"""
     try:
@@ -272,6 +285,7 @@ def power_off_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def reboot_view(request):
     """Reboot FarmBot"""
     try:
@@ -283,6 +297,7 @@ def reboot_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def servo_angle_view(request):
     """Set servo angle"""
     serializer = ServoAngleSerializer(data=request.data)
@@ -299,6 +314,7 @@ def servo_angle_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def lua_script_view(request):
     """Execute Lua script"""
     serializer = LuaScriptSerializer(data=request.data)
@@ -315,6 +331,7 @@ def lua_script_view(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def get_position_view(request):
     """Get current position"""
     try:
@@ -328,6 +345,7 @@ def get_position_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def send_message_view(request):
     """Send message to FarmBot"""
     serializer = MessageSerializer(data=request.data)
@@ -344,6 +362,7 @@ def send_message_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def mount_tool_view(request):
     """Mount a specific tool"""
     serializer = ToolSerializer(data=request.data)
@@ -363,6 +382,7 @@ def mount_tool_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def dismount_tool_view(request):
     """Dismount the current tool"""
     try:
@@ -377,6 +397,7 @@ def dismount_tool_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def water_plant_view(request):
     """Move to position and water using FarmBot's built-in watering command"""
     serializer = WateringSerializer(data=request.data)
@@ -400,6 +421,7 @@ def water_plant_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def dispense_view(request):
     """Dispense a specific amount of liquid"""
     serializer = DispensingSerializer(data=request.data)
@@ -423,6 +445,7 @@ def dispense_view(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def take_photo_view(request):
     """Take a photo using FarmBot's camera and retrieve the most recent photo from FarmBot Web App"""
     try:
@@ -470,6 +493,7 @@ def take_photo_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def clear_photos_view(request):
     """Clear all photos from the farm_images folder"""
     import os
@@ -503,6 +527,7 @@ def clear_photos_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def seed_injector_view(request):
     """Use the seed injector to plant seeds"""
     serializer = SeedInjectorSerializer(data=request.data)
@@ -525,6 +550,7 @@ def seed_injector_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def rotary_tool_view(request):
     """Use the rotary tool"""
     serializer = RotaryToolSerializer(data=request.data)
@@ -547,6 +573,7 @@ def rotary_tool_view(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def soil_sensor_view(request):
     """Get soil sensor readings"""
     try:
@@ -562,6 +589,7 @@ def soil_sensor_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @authentication_classes([])
+@throttle_classes([UserRateThrottle, AnonRateThrottle])
 def weeder_view(request):
     """Use the weeder tool to remove weeds at a specific location"""
     serializer = WeederSerializer(data=request.data)
