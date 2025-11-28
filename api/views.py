@@ -209,6 +209,9 @@ def register_view(request):
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     user = User.objects.create_user(username=username, email=email, password=password)
     token, _ = Token.objects.get_or_create(user=user)
+    # Audit log registration
+    from .models import AuditLog
+    AuditLog.objects.create(user=user, action="register", object_id=str(user.id), details=f"User {username} registered.")
     return Response({"token": token.key}, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
@@ -228,11 +231,15 @@ def login_view(request):
     if errors:
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     user = authenticate(username=username, password=password)
+    from .models import AuditLog
     if not user:
+        AuditLog.objects.create(user=None, action="login_failed", details=f"Login failed for username: {username}")
         return Response({"error": "invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
     if not connect_bot():
+        AuditLog.objects.create(user=user, action="login_failed", object_id=str(user.id), details="Could not connect to FarmBot")
         return Response({"error": "Could not connect to FarmBot"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
     token, _ = Token.objects.get_or_create(user=user)
+    AuditLog.objects.create(user=user, action="login", object_id=str(user.id), details=f"User {username} logged in.")
     return Response({"token": token.key}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
