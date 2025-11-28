@@ -81,7 +81,7 @@ from .serializers import (
     LuaScriptSerializer, WateringSerializer, DispensingSerializer,
     ToolSerializer, SequenceSerializer, SeedInjectorSerializer,
     RotaryToolSerializer, SoilSensorSerializer, PhotoModelSerializer,
-    WeederSerializer
+    WeederSerializer, NotificationPreferenceSerializer
 )
 from farmlib.wrapper import (
     connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock,
@@ -785,3 +785,22 @@ def weeder_view(request):
             return Response({"error": "Failed to complete weeding operation"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+from .models import NotificationPreference
+from .serializers import NotificationPreferenceSerializer
+from rest_framework.permissions import IsAuthenticated
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def notification_preference_view(request):
+    user = request.user
+    pref, _ = NotificationPreference.objects.get_or_create(user=user)
+    if request.method == 'GET':
+        serializer = NotificationPreferenceSerializer(pref)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = NotificationPreferenceSerializer(pref, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
