@@ -1,3 +1,28 @@
+import os
+import zipfile
+import io
+# Export all photos as a ZIP file
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def export_photos_zip_view(request):
+    try:
+        images_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'farm_images')
+        if not os.path.exists(images_dir):
+            return Response({"error": "farm_images directory not found"}, status=status.HTTP_404_NOT_FOUND)
+        image_files = [f for f in os.listdir(images_dir) if f.lower().endswith('.jpg')]
+        if not image_files:
+            return Response({"error": "No .jpg images found"}, status=status.HTTP_404_NOT_FOUND)
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+            for filename in image_files:
+                file_path = os.path.join(images_dir, filename)
+                zip_file.write(file_path, arcname=filename)
+        zip_buffer.seek(0)
+        response = HttpResponse(zip_buffer, content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename="farmbot-photos.zip"'
+        return response
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 from .models import AuditLog
 import csv
 from django.http import HttpResponse
@@ -5,29 +30,34 @@ from django.http import HttpResponse
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def export_auditlog_view(request):
-    format = request.query_params.get('format', 'csv')
-    logs = AuditLog.objects.all().order_by('-timestamp')
-    if format == 'log':
-        response = HttpResponse(content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="auditlog.log"'
-        for log in logs:
-            line = f"{log.timestamp} | {log.user.username if log.user else ''} | {log.action} | {log.object_id} | {log.details}\n"
-            response.write(line)
-        return response
-    else:
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="auditlog.csv"'
-        writer = csv.writer(response)
-        writer.writerow(['timestamp', 'user', 'action', 'object_id', 'details'])
-        for log in logs:
-            writer.writerow([
-                log.timestamp,
-                log.user.username if log.user else '',
-                log.action,
-                log.object_id,
-                log.details
-            ])
-        return response
+    try:
+        format = request.query_params.get('format', 'csv')
+        logs = AuditLog.objects.all().order_by('-timestamp')
+        if not logs.exists():
+            return Response({"error": "No audit logs found"}, status=status.HTTP_404_NOT_FOUND)
+        if format == 'log':
+            response = HttpResponse(content_type='text/plain')
+            response['Content-Disposition'] = 'attachment; filename="auditlog.log"'
+            for log in logs:
+                line = f"{log.timestamp} | {log.user.username if log.user else ''} | {log.action} | {log.object_id} | {log.details}\n"
+                response.write(line)
+            return response
+        else:
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="auditlog.csv"'
+            writer = csv.writer(response)
+            writer.writerow(['timestamp', 'user', 'action', 'object_id', 'details'])
+            for log in logs:
+                writer.writerow([
+                    log.timestamp,
+                    log.user.username if log.user else '',
+                    log.action,
+                    log.object_id,
+                    log.details
+                ])
+            return response
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, authentication_classes, action, throttle_classes
 from rest_framework.response import Response
