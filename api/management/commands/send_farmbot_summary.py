@@ -8,7 +8,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--period', type=str, default='day', choices=['day', 'week', 'month'], help='Summary period')
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         period = options['period']
         users = User.objects.filter(email__isnull=False).exclude(email='')
         for user in users:
