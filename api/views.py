@@ -194,10 +194,19 @@ def register_view(request):
     username = request.data.get('username') or request.data.get('email')
     email = request.data.get('email') or username
     password = request.data.get('password')
+    errors = {}
     if not username or not password:
-        return Response({"error": "username/email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+        errors['fields'] = "username/email and password are required"
+    if username and not isinstance(username, str):
+        errors['username'] = "username must be a string"
+    if password and (not isinstance(password, str) or len(password) < 4):
+        errors['password'] = "password must be at least 4 characters"
+    if email and not isinstance(email, str):
+        errors['email'] = "email must be a string"
     if User.objects.filter(username=username).exists():
-        return Response({"error": "username already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        errors['username_exists'] = "username already exists"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     user = User.objects.create_user(username=username, email=email, password=password)
     token, _ = Token.objects.get_or_create(user=user)
     return Response({"token": token.key}, status=status.HTTP_201_CREATED)
@@ -209,15 +218,20 @@ def register_view(request):
 def login_view(request):
     username = request.data.get('username') or request.data.get('email')
     password = request.data.get('password')
+    errors = {}
     if not username or not password:
-        return Response({"error": "username/email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+        errors['fields'] = "username/email and password are required"
+    if username and not isinstance(username, str):
+        errors['username'] = "username must be a string"
+    if password and (not isinstance(password, str) or len(password) < 4):
+        errors['password'] = "password must be at least 4 characters"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     user = authenticate(username=username, password=password)
     if not user:
         return Response({"error": "invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-    
     if not connect_bot():
         return Response({"error": "Could not connect to FarmBot"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-
     token, _ = Token.objects.get_or_create(user=user)
     return Response({"token": token.key}, status=status.HTTP_200_OK)
 
@@ -257,10 +271,19 @@ def move_absolute_view(request):
     serializer = PositionSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    # Validate coordinates and speed
+    errors = {}
+    for axis in ['x', 'y', 'z']:
+        if not isinstance(data[axis], (int, float)):
+            errors[axis] = f"{axis} must be a number"
+    speed = data.get('speed', 100)
+    if not isinstance(speed, (int, float)) or speed < 1 or speed > 100:
+        errors['speed'] = "Speed must be between 1 and 100"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
-        move_absolute(data['x'], data['y'], data['z'], data.get('speed', 100))
+        move_absolute(data['x'], data['y'], data['z'], speed)
         return Response({"status": "moving"}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -274,10 +297,19 @@ def move_relative_view(request):
     serializer = PositionSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    # Validate coordinates and speed
+    errors = {}
+    for axis in ['x', 'y', 'z']:
+        if not isinstance(data[axis], (int, float)):
+            errors[axis] = f"{axis} must be a number"
+    speed = data.get('speed', 100)
+    if not isinstance(speed, (int, float)) or speed < 1 or speed > 100:
+        errors['speed'] = "Speed must be between 1 and 100"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
-        move_relative(data['x'], data['y'], data['z'], data.get('speed', 100))
+        move_relative(data['x'], data['y'], data['z'], speed)
         return Response({"status": "moving"}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -363,10 +395,18 @@ def servo_angle_view(request):
     serializer = ServoAngleSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    errors = {}
+    pin = data.get('pin')
+    angle = data.get('angle')
+    if not isinstance(pin, int) or pin < 0 or pin > 20:
+        errors['pin'] = "pin must be an integer between 0 and 20"
+    if not isinstance(angle, (int, float)) or angle < 0 or angle > 180:
+        errors['angle'] = "angle must be between 0 and 180"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
-        servo_angle(data['pin'], data['angle'])
+        servo_angle(pin, angle)
         return Response({"status": "servo angle set"}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -428,10 +468,12 @@ def mount_tool_view(request):
     serializer = ToolSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    tool_name = data.get('tool_name')
+    if not tool_name or not isinstance(tool_name, str):
+        return Response({'tool_name': 'tool_name must be a non-empty string'}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
-        success = mount_tool(tool_name=data['tool_name'])
+        success = mount_tool(tool_name=tool_name)
         if success:
             return Response({"status": "tool mounted"}, status=status.HTTP_200_OK)
         else:
@@ -463,9 +505,16 @@ def water_plant_view(request):
     serializer = WateringSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    # Validate coordinates
+    errors = {}
+    for axis in ['x', 'y', 'z']:
+        val = data.get(axis, None)
+        if val is not None and not isinstance(val, (int, float)):
+            errors[axis] = f"{axis} must be a number"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
         success = water_plant(
             x=data.get('x', 6),
             y=data.get('y', 600),
@@ -487,11 +536,16 @@ def dispense_view(request):
     serializer = DispensingSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    errors = {}
+    milliliters = data.get('milliliters')
+    if not isinstance(milliliters, (int, float)) or milliliters <= 0:
+        errors['milliliters'] = "milliliters must be a positive number"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
         success = dispense(
-            milliliters=data['milliliters'],
+            milliliters=milliliters,
             tool_name=data.get('tool_name'),
             pin=data.get('pin')
         )
@@ -593,12 +647,20 @@ def seed_injector_view(request):
     serializer = SeedInjectorSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    errors = {}
+    seeds_count = data.get('seeds_count', 1)
+    dispense_time = data.get('dispense_time', 1.0)
+    if not isinstance(seeds_count, int) or seeds_count < 1:
+        errors['seeds_count'] = "seeds_count must be a positive integer"
+    if not isinstance(dispense_time, (int, float)) or dispense_time <= 0:
+        errors['dispense_time'] = "dispense_time must be a positive number"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
         success = use_seed_injector(
-            seeds_count=data.get('seeds_count', 1),
-            dispense_time=data.get('dispense_time', 1.0)
+            seeds_count=seeds_count,
+            dispense_time=dispense_time
         )
         if success:
             return Response({"status": "seeds planted successfully"}, status=status.HTTP_200_OK)
@@ -616,12 +678,20 @@ def rotary_tool_view(request):
     serializer = RotaryToolSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    errors = {}
+    speed = data.get('speed', 100)
+    duration = data.get('duration', 5.0)
+    if not isinstance(speed, (int, float)) or speed < 1 or speed > 100:
+        errors['speed'] = "speed must be between 1 and 100"
+    if not isinstance(duration, (int, float)) or duration <= 0:
+        errors['duration'] = "duration must be a positive number"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
         success = use_rotary_tool(
-            speed=data.get('speed', 100),
-            duration=data.get('duration', 5.0)
+            speed=speed,
+            duration=duration
         )
         if success:
             return Response({"status": "rotary tool operation completed"}, status=status.HTTP_200_OK)
@@ -655,15 +725,26 @@ def weeder_view(request):
     serializer = WeederSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+    data = serializer.validated_data
+    errors = {}
+    for axis in ['x', 'y', 'z']:
+        if not isinstance(data.get(axis), (int, float)):
+            errors[axis] = f"{axis} must be a number"
+    working_depth = data.get('working_depth', -20)
+    speed = data.get('speed', 100)
+    if not isinstance(working_depth, (int, float)):
+        errors['working_depth'] = "working_depth must be a number"
+    if not isinstance(speed, (int, float)) or speed < 1 or speed > 100:
+        errors['speed'] = "speed must be between 1 and 100"
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     try:
-        data = serializer.validated_data
         success = use_weeder(
             x=data['x'],
             y=data['y'],
             z=data['z'],
-            working_depth=data.get('working_depth', -20),
-            speed=data.get('speed', 100)
+            working_depth=working_depth,
+            speed=speed
         )
         if success:
             return Response({"status": "weeding completed successfully"}, status=status.HTTP_200_OK)
