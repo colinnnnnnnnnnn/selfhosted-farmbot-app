@@ -550,7 +550,7 @@ def dismount_tool_view(request):
         if success:
             return Response({"status": "tool dismounted"}, status=status.HTTP_200_OK)
         else:
-            return Response({"error": "Failed to dismount tool"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "Tool still detected after dismount - check physical connection"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

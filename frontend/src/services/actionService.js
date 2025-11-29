@@ -75,8 +75,9 @@ export const mountTool = async (tool_name, setMoveStatus = () => {}) => {
     setMoveStatus(`${tool_name} mounted`);
   } catch (error) {
     console.log('Error mounting tool:', error);
-    setMoveStatus('Mount failed');
-    throw error;
+    const errorMsg = error.response?.data?.error || 'Mount failed';
+    setMoveStatus(errorMsg);
+    // Don't re-throw - just show the error message
   }
 };
 
@@ -90,7 +91,8 @@ export const dismountTool = async (setMoveStatus = () => {}) => {
     setMoveStatus('Tool dismounted');
   } catch (error) {
     console.log('Error dismounting tool:', error);
-    setMoveStatus('Dismount failed');
-    throw error;
+    const errorMsg = error.response?.data?.error || 'Dismount failed';
+    setMoveStatus(errorMsg);
+    // Don't re-throw - just show the error message
   }
 };
