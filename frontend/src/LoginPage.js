@@ -69,32 +69,9 @@ function LoginPage({ onLogin }) {
   };
 
   const handleSocialAuth = (provider) => {
-    const popup = window.open(
-      `${API_BASE}/auth/${provider}/login/`,
-      'socialAuth',
-      'width=500,height=600,scrollbars=yes,resizable=yes'
-    );
-
-    // Listen for messages from the popup
-    const messageListener = (event) => {
-      if (event.data.type === 'SOCIAL_AUTH_SUCCESS') {
-        const { token } = event.data;
-        localStorage.setItem('authToken', token);
-        onLogin(token);
-        popup.close();
-        window.removeEventListener('message', messageListener);
-      }
-    };
-
-    window.addEventListener('message', messageListener);
-
-    // Check if popup is closed manually
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        window.removeEventListener('message', messageListener);
-      }
-    }, 1000);
+    // Simply redirect to the OAuth provider
+    // After authentication, the backend will redirect back to the frontend with the token
+    window.location.href = `${API_BASE}/auth/${provider}/login/`;
   };
 
   return (
