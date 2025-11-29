@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import axios from '../utils/axiosConfig';
+import { API_BASE } from '../utils/axiosConfig';
 
 const modalBackdrop = {
   position: 'fixed',
@@ -53,8 +55,70 @@ const enlargedStyle = {
   boxShadow: '0 2px 16px rgba(0,0,0,0.7)',
 };
 
-function PhotoGallery({ photos, open, onClose }) {
+function PhotoGallery({ photos: localPhotos, open, onClose }) {
   const [selected, setSelected] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+
+  // Fetch photos from paginated API
+  const fetchPhotos = useCallback(async (cursor = null) => {
+    setLoading(true);
+    try {
+      const url = cursor 
+        ? `${API_BASE}/photos/?cursor=${cursor}` 
+        : `${API_BASE}/photos/`;
+      const response = await axios.get(url);
+      
+      if (cursor) {
+        // Append to existing photos
+        setPhotos(prev => [...prev, ...response.data.results]);
+      } else {
+        // Initial load - replace photos
+        setPhotos(response.data.results || []);
+      }
+      
+      // Extract cursor from next URL
+      if (response.data.next) {
+        const nextUrl = new URL(response.data.next);
+        setNextCursor(nextUrl.searchParams.get('cursor'));
+      } else {
+        setNextCursor(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch photos:', error);
+      // Fallback to local photoData if API fails
+      setPhotos(localPhotos || []);
+      setNextCursor(null);
+    } finally {
+      setLoading(false);
+      setInitialLoad(false);
+    }
+  }, [localPhotos]);
+
+  // Load photos when gallery opens
+  useEffect(() => {
+    if (open && initialLoad) {
+      fetchPhotos();
+    }
+  }, [open, initialLoad, fetchPhotos]);
+
+  // Reset when gallery closes
+  useEffect(() => {
+    if (!open) {
+      setSelected(null);
+      setInitialLoad(true);
+      setPhotos([]);
+      setNextCursor(null);
+    }
+  }, [open]);
+
+  const handleLoadMore = () => {
+    if (nextCursor && !loading) {
+      fetchPhotos(nextCursor);
+    }
+  };
 
   if (!open) return null;
 
@@ -74,28 +138,120 @@ function PhotoGallery({ photos, open, onClose }) {
         </div>
         {selected ? (
           <div style={{ textAlign: 'center' }}>
-            <img src={selected.url} alt="enlarged" style={enlargedStyle} />
-            <div style={{ marginBottom: 8 }}>
-              <strong>Filename:</strong> {selected.filename || selected.url.split('/').pop()}
+            <img 
+              src={selected.url} 
+              alt="enlarged" 
+              style={enlargedStyle}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div style={{
+              display: 'none',
+              width: '300px',
+              height: '200px',
+              margin: '0 auto 12px',
+              backgroundColor: '#3a3a3a',
+              borderRadius: '10px',
+              border: '3px solid #13a73f',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#888',
+              fontSize: '16px',
+              flexDirection: 'column',
+              gap: '10px',
+            }}>
+              <span style={{ fontSize: '48px' }}>📷</span>
+              <span>Image file not found</span>
+              <span style={{ fontSize: '12px' }}>The original file may have been deleted</span>
             </div>
             <div style={{ marginBottom: 8 }}>
-              <strong>Date:</strong> {selected.timestamp ? new Date(selected.timestamp).toLocaleString() : 'N/A'}
+              <strong>Filename:</strong> {selected.farmbot_id || (selected.url && selected.url.split('/').pop())}
             </div>
+            <div style={{ marginBottom: 8 }}>
+              <strong>Date:</strong> {selected.created_at ? new Date(selected.created_at).toLocaleString() : 'N/A'}
+            </div>
+            {selected.coordinates && (
+              <div style={{ marginBottom: 8 }}>
+                <strong>Position:</strong> X: {selected.coordinates.x}, Y: {selected.coordinates.y}, Z: {selected.coordinates.z}
+              </div>
+            )}
             <button onClick={() => setSelected(null)} style={{ background: '#13a73f', color: 'white', border: 'none', borderRadius: 4, padding: '6px 18px', cursor: 'pointer', fontSize: 15 }}>Back to Gallery</button>
           </div>
         ) : (
-          <div style={gridStyle}>
-            {photos && photos.length > 0 ? photos.map((photo, idx) => (
-              <img
-                key={photo.url || idx}
-                src={photo.url}
-                alt={`photo-${idx}`}
-                style={thumbStyle}
-                onClick={() => setSelected(photo)}
-                title={photo.filename || photo.url.split('/').pop()}
-              />
-            )) : <div style={{ color: '#aaa', gridColumn: '1/-1' }}>No photos available.</div>}
-          </div>
+          <>
+            {initialLoad && loading ? (
+              <div style={{ color: '#aaa', textAlign: 'center', padding: '40px' }}>Loading photos...</div>
+            ) : photos && photos.length > 0 ? (
+              <>
+                <div style={gridStyle}>
+                  {photos.map((photo, idx) => (
+                    <div
+                      key={photo.id || photo.url || idx}
+                      style={{ position: 'relative' }}
+                      onClick={() => setSelected(photo)}
+                      title={photo.farmbot_id || (photo.url && photo.url.split('/').pop())}
+                    >
+                      <img
+                        src={photo.url}
+                        alt={`photo-${idx}`}
+                        style={thumbStyle}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div style={{
+                        display: 'none',
+                        width: '100%',
+                        height: '80px',
+                        backgroundColor: '#3a3a3a',
+                        borderRadius: '6px',
+                        border: '2px solid #444',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#888',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        flexDirection: 'column',
+                      }}>
+                        <span>📷</span>
+                        <span>Not found</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Load More Button */}
+                {nextCursor && (
+                  <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={loading}
+                      style={{
+                        background: loading ? '#666' : '#13a73f',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 4,
+                        padding: '8px 24px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        fontSize: 14,
+                      }}
+                    >
+                      {loading ? 'Loading...' : 'Load More Photos'}
+                    </button>
+                  </div>
+                )}
+                
+                <div style={{ color: '#888', textAlign: 'center', marginTop: '10px', fontSize: '12px' }}>
+                  Showing {photos.length} photos
+                </div>
+              </>
+            ) : (
+              <div style={{ color: '#aaa', gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>No photos available.</div>
+            )}
+          </>
         )}
       </div>
     </div>

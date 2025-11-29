@@ -55,39 +55,23 @@ function LoginPage({ onLogin }) {
       // Notify parent component
       onLogin(token);
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed');
+      // Backend returns errors as object with field names as keys
+      const errData = err.response?.data;
+      if (errData && typeof errData === 'object') {
+        const firstError = Object.values(errData)[0];
+        setError(firstError || 'Registration failed');
+      } else {
+        setError('Registration failed');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleSocialAuth = (provider) => {
-    const popup = window.open(
-      `${API_BASE}/auth/${provider}/login/`,
-      'socialAuth',
-      'width=500,height=600,scrollbars=yes,resizable=yes'
-    );
-
-    // Listen for messages from the popup
-    const messageListener = (event) => {
-      if (event.data.type === 'SOCIAL_AUTH_SUCCESS') {
-        const { token } = event.data;
-        localStorage.setItem('authToken', token);
-        onLogin(token);
-        popup.close();
-        window.removeEventListener('message', messageListener);
-      }
-    };
-
-    window.addEventListener('message', messageListener);
-
-    // Check if popup is closed manually
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        window.removeEventListener('message', messageListener);
-      }
-    }, 1000);
+    // Simply redirect to the OAuth provider
+    // After authentication, the backend will redirect back to the frontend with the token
+    window.location.href = `${API_BASE}/auth/${provider}/login/`;
   };
 
   return (

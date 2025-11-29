@@ -5,7 +5,9 @@ import { useAuth } from './hooks/useAuth';
 import { useFarmBotPosition } from './hooks/useFarmBotPosition';
 import { usePhotos } from './hooks/usePhotos';
 import ControlButtons from './components/ControlButtons';
+import ActionButtons from './components/ActionButtons';
 import PhotoGallery from './components/PhotoGallery';
+import SequenceEditor from './components/SequenceEditor';
 import StatusDisplay from './components/StatusDisplay';
 import MoveAbsoluteForm from './components/MoveAbsoluteForm';
 import MoveRelativeForm from './components/MoveRelativeForm';
@@ -14,8 +16,8 @@ import FarmBotMap from './components/FarmBotMap';
 import BotVisibilityToggle from './components/BotVisibilityToggle';
 import LogViewer from './components/LogViewer';
 import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
-import { takePhoto, clearAllPhotos } from './services/photoService';
-import { waterPlant, weed } from './services/actionService';
+import { takePhoto, clearAllPhotos, loadPhotosFromAPI } from './services/photoService';
+import { waterPlant, weed, injectSeed, mountTool, dismountTool, readSoilSensor, activateRotaryTool } from './services/actionService';
 
 function App() {
   // Authentication
@@ -36,13 +38,20 @@ function App() {
   
   // UI state
   const [photoLoading, setPhotoLoading] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [botVisible, setBotVisible] = useState(true);
   // Gallery modal state
   const [galleryOpen, setGalleryOpen] = useState(false);
+  // Sequence editor modal state
+  const [sequenceEditorOpen, setSequenceEditorOpen] = useState(false);
+  // Tool mounting state
+  const [selectedTool, setSelectedTool] = useState('');
 
   // Handlers
   const handleOpenGallery = () => setGalleryOpen(true);
   const handleCloseGallery = () => setGalleryOpen(false);
+  const handleOpenSequenceEditor = () => setSequenceEditorOpen(true);
+  const handleCloseSequenceEditor = () => setSequenceEditorOpen(false);
   const handleLogout = () => {
     authLogout();
     setPhotoData([]);
@@ -140,6 +149,31 @@ function App() {
     await weed({ x: position.x, y: position.y, z: position.z }, setMoveStatus);
   };
 
+  const handleInjectSeed = async () => {
+    // Inject seed at current position with default params
+    await injectSeed({}, setMoveStatus);
+  };
+
+  const handleMountTool = async () => {
+    if (!selectedTool) {
+      setMoveStatus('Please select a tool first');
+      return;
+    }
+    await mountTool(selectedTool, setMoveStatus);
+  };
+
+  const handleDismountTool = async () => {
+    await dismountTool(setMoveStatus);
+  };
+
+  const handleReadSoilSensor = async () => {
+    await readSoilSensor(setMoveStatus);
+  };
+
+  const handleRotaryTool = async () => {
+    await activateRotaryTool({}, setMoveStatus);
+  };
+
   const handleTakePhoto = async () => {
     setPhotoLoading(true);
     try {
@@ -151,6 +185,17 @@ function App() {
 
   const handleClearPhotos = async () => {
     await clearAllPhotos(photoData, clearPhotos, setMoveStatus);
+  };
+
+  const handleLoadPhotosToGrid = async () => {
+    setLoadingPhotos(true);
+    try {
+      await loadPhotosFromAPI(setPhotoData, savePhotos, setMoveStatus);
+    } catch (error) {
+      console.error('Error loading photos to grid:', error);
+    } finally {
+      setLoadingPhotos(false);
+    }
   };
 
   const handleHome = async () => {
@@ -172,23 +217,27 @@ function App() {
       </div>
 
   {/* Top section with controls and move forms */}
-  <div className="dirt-background" style={{ display: 'flex', gap: 40, marginBottom: 20, padding: '15px 20px', alignItems: 'flex-start', minHeight: '160px', maxHeight: '260px', overflow: 'hidden', boxSizing: 'border-box' }}>
+  <div className="dirt-background" style={{ display: 'flex', gap: 20, marginBottom: 20, padding: '15px 20px', alignItems: 'flex-start', minHeight: '200px', maxHeight: '320px', overflow: 'hidden', boxSizing: 'border-box' }}>
         <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start' }}>
           <ControlButtons
             handleGet={handleGet}
             handleUnlock={handleUnlock}
-            handleWaterPlant={handleWaterPlant}
-            handleWeeding={handleWeeding}
             handleHome={handleHome}
             handleTakePhoto={handleTakePhoto}
             handleClearPhotos={handleClearPhotos}
             handleOpenGallery={handleOpenGallery}
+            handleOpenSequenceEditor={handleOpenSequenceEditor}
+            handleLoadPhotosToGrid={handleLoadPhotosToGrid}
             loading={loading}
             photoLoading={photoLoading}
+            loadingPhotos={loadingPhotos}
             photoCount={photoData.length}
           />
   {/* Photo Gallery Modal */}
   <PhotoGallery photos={photoData} open={galleryOpen} onClose={handleCloseGallery} />
+
+  {/* Sequence Editor Modal */}
+  <SequenceEditor open={sequenceEditorOpen} onClose={handleCloseSequenceEditor} setMoveStatus={setMoveStatus} />
 
           <StatusDisplay
             position={position}
@@ -198,14 +247,16 @@ function App() {
         </div>
 
   {/* Move sections */}
-  <div style={{ flex: '1', display: 'flex', gap: 40, alignItems: 'flex-start' }}>
+  <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <MoveAbsoluteForm
             moveForm={moveForm}
             handleInputChange={handleInputChange}
             handleMove={handleMove}
             loading={loading}
           />
+        </div>
 
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <MoveRelativeForm
             moveRelForm={moveRelForm}
             handleRelInputChange={handleRelInputChange}
@@ -214,11 +265,28 @@ function App() {
           />
         </div>
 
+        {/* Action buttons */}
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <ActionButtons
+            handleWaterPlant={handleWaterPlant}
+            handleWeeding={handleWeeding}
+            handleInjectSeed={handleInjectSeed}
+            handleReadSoilSensor={handleReadSoilSensor}
+            handleRotaryTool={handleRotaryTool}
+            selectedTool={selectedTool}
+            setSelectedTool={setSelectedTool}
+            handleMountTool={handleMountTool}
+            handleDismountTool={handleDismountTool}
+          />
+        </div>
+
         {/* D-pad section */}
-        <ManualJogPad
-          startNudge={startNudge}
-          stopNudge={stopNudge}
-        />
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <ManualJogPad
+            startNudge={startNudge}
+            stopNudge={stopNudge}
+          />
+        </div>
       </div>
 
       {/* Lower section: toggle, grid, and logs in one horizontal flex container */}
