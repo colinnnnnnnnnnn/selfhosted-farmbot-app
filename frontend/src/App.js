@@ -5,6 +5,7 @@ import { useAuth } from './hooks/useAuth';
 import { useFarmBotPosition } from './hooks/useFarmBotPosition';
 import { usePhotos } from './hooks/usePhotos';
 import ControlButtons from './components/ControlButtons';
+import ToolSelector from './components/ToolSelector';
 import PhotoGallery from './components/PhotoGallery';
 import StatusDisplay from './components/StatusDisplay';
 import MoveAbsoluteForm from './components/MoveAbsoluteForm';
@@ -15,7 +16,7 @@ import BotVisibilityToggle from './components/BotVisibilityToggle';
 import LogViewer from './components/LogViewer';
 import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
 import { takePhoto, clearAllPhotos } from './services/photoService';
-import { waterPlant, weed, injectSeed } from './services/actionService';
+import { waterPlant, weed, injectSeed, mountTool, dismountTool } from './services/actionService';
 
 function App() {
   // Authentication
@@ -39,6 +40,8 @@ function App() {
   const [botVisible, setBotVisible] = useState(true);
   // Gallery modal state
   const [galleryOpen, setGalleryOpen] = useState(false);
+  // Tool mounting state
+  const [selectedTool, setSelectedTool] = useState('');
 
   // Handlers
   const handleOpenGallery = () => setGalleryOpen(true);
@@ -145,6 +148,18 @@ function App() {
     await injectSeed({}, setMoveStatus);
   };
 
+  const handleMountTool = async () => {
+    if (!selectedTool) {
+      setMoveStatus('Please select a tool first');
+      return;
+    }
+    await mountTool(selectedTool, setMoveStatus);
+  };
+
+  const handleDismountTool = async () => {
+    await dismountTool(setMoveStatus);
+  };
+
   const handleTakePhoto = async () => {
     setPhotoLoading(true);
     try {
@@ -192,6 +207,12 @@ function App() {
             loading={loading}
             photoLoading={photoLoading}
             photoCount={photoData.length}
+          />
+          <ToolSelector
+            selectedTool={selectedTool}
+            setSelectedTool={setSelectedTool}
+            handleMountTool={handleMountTool}
+            handleDismountTool={handleDismountTool}
           />
   {/* Photo Gallery Modal */}
   <PhotoGallery photos={photoData} open={galleryOpen} onClose={handleCloseGallery} />

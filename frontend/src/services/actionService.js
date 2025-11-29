@@ -63,3 +63,34 @@ export const injectSeed = async (
     throw error;
   }
 };
+
+/**
+ * Mount a specific tool.
+ * tool_name: name of the tool to mount (e.g., 'seed_injector', 'watering_nozzle', 'weeder', 'soil_sensor', 'rotary_tool')
+ */
+export const mountTool = async (tool_name, setMoveStatus = () => {}) => {
+  try {
+    setMoveStatus(`Mounting ${tool_name}`);
+    await axios.post(`${API_BASE}/mount-tool/`, { tool_name });
+    setMoveStatus(`${tool_name} mounted`);
+  } catch (error) {
+    console.log('Error mounting tool:', error);
+    setMoveStatus('Mount failed');
+    throw error;
+  }
+};
+
+/**
+ * Dismount the currently mounted tool.
+ */
+export const dismountTool = async (setMoveStatus = () => {}) => {
+  try {
+    setMoveStatus('Dismounting tool');
+    await axios.post(`${API_BASE}/dismount-tool/`);
+    setMoveStatus('Tool dismounted');
+  } catch (error) {
+    console.log('Error dismounting tool:', error);
+    setMoveStatus('Dismount failed');
+    throw error;
+  }
+};
