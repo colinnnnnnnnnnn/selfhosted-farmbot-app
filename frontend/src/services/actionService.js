@@ -40,3 +40,26 @@ export const weed = async (
     throw error;
   }
 };
+
+/**
+ * Seed injector - plants seeds at current position.
+ * seeds_count: number of seeds (default 1)
+ * dispense_time: seconds per seed (default 1.0)
+ */
+export const injectSeed = async (
+  { seeds_count = 1, dispense_time = 1.0 } = {},
+  setMoveStatus = () => {}
+) => {
+  try {
+    setMoveStatus('Injecting seed');
+    await axios.post(`${API_BASE}/seed-injector/`, {
+      seeds_count,
+      dispense_time,
+    });
+    setMoveStatus('Seed injected');
+  } catch (error) {
+    console.log('Error injecting seed:', error);
+    setMoveStatus('Seed injection failed');
+    throw error;
+  }
+};

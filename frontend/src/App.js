@@ -15,7 +15,7 @@ import BotVisibilityToggle from './components/BotVisibilityToggle';
 import LogViewer from './components/LogViewer';
 import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
 import { takePhoto, clearAllPhotos } from './services/photoService';
-import { waterPlant, weed } from './services/actionService';
+import { waterPlant, weed, injectSeed } from './services/actionService';
 
 function App() {
   // Authentication
@@ -140,6 +140,11 @@ function App() {
     await weed({ x: position.x, y: position.y, z: position.z }, setMoveStatus);
   };
 
+  const handleInjectSeed = async () => {
+    // Inject seed at current position with default params
+    await injectSeed({}, setMoveStatus);
+  };
+
   const handleTakePhoto = async () => {
     setPhotoLoading(true);
     try {
@@ -179,6 +184,7 @@ function App() {
             handleUnlock={handleUnlock}
             handleWaterPlant={handleWaterPlant}
             handleWeeding={handleWeeding}
+            handleInjectSeed={handleInjectSeed}
             handleHome={handleHome}
             handleTakePhoto={handleTakePhoto}
             handleClearPhotos={handleClearPhotos}
