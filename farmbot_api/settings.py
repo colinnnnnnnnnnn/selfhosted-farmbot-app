@@ -177,6 +177,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.PhotoCursorPagination',
+    'PAGE_SIZE': 20,
 }
 
 # CORS settings for development
