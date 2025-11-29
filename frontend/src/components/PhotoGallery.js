@@ -138,9 +138,36 @@ function PhotoGallery({ photos: localPhotos, open, onClose }) {
         </div>
         {selected ? (
           <div style={{ textAlign: 'center' }}>
-            <img src={selected.url} alt="enlarged" style={enlargedStyle} />
+            <img 
+              src={selected.url} 
+              alt="enlarged" 
+              style={enlargedStyle}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div style={{
+              display: 'none',
+              width: '300px',
+              height: '200px',
+              margin: '0 auto 12px',
+              backgroundColor: '#3a3a3a',
+              borderRadius: '10px',
+              border: '3px solid #13a73f',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#888',
+              fontSize: '16px',
+              flexDirection: 'column',
+              gap: '10px',
+            }}>
+              <span style={{ fontSize: '48px' }}>📷</span>
+              <span>Image file not found</span>
+              <span style={{ fontSize: '12px' }}>The original file may have been deleted</span>
+            </div>
             <div style={{ marginBottom: 8 }}>
-              <strong>Filename:</strong> {selected.farmbot_id || selected.url.split('/').pop()}
+              <strong>Filename:</strong> {selected.farmbot_id || (selected.url && selected.url.split('/').pop())}
             </div>
             <div style={{ marginBottom: 8 }}>
               <strong>Date:</strong> {selected.created_at ? new Date(selected.created_at).toLocaleString() : 'N/A'}
@@ -160,14 +187,39 @@ function PhotoGallery({ photos: localPhotos, open, onClose }) {
               <>
                 <div style={gridStyle}>
                   {photos.map((photo, idx) => (
-                    <img
+                    <div
                       key={photo.id || photo.url || idx}
-                      src={photo.url}
-                      alt={`photo-${idx}`}
-                      style={thumbStyle}
+                      style={{ position: 'relative' }}
                       onClick={() => setSelected(photo)}
-                      title={photo.farmbot_id || photo.url.split('/').pop()}
-                    />
+                      title={photo.farmbot_id || (photo.url && photo.url.split('/').pop())}
+                    >
+                      <img
+                        src={photo.url}
+                        alt={`photo-${idx}`}
+                        style={thumbStyle}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div style={{
+                        display: 'none',
+                        width: '100%',
+                        height: '80px',
+                        backgroundColor: '#3a3a3a',
+                        borderRadius: '6px',
+                        border: '2px solid #444',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#888',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        flexDirection: 'column',
+                      }}>
+                        <span>📷</span>
+                        <span>Not found</span>
+                      </div>
+                    </div>
                   ))}
                 </div>
                 
