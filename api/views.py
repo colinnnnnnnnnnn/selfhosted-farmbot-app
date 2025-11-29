@@ -18,6 +18,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.authtoken.models import Token
 
+from .pagination import PhotoCursorPagination
+
 from .models import AuditLog, Sequence, Step, Photo
 from .serializers import (
     PositionSerializer, ServoAngleSerializer, MessageSerializer, 
@@ -104,13 +106,31 @@ def export_auditlog_view(request):
 class PhotoViewSet(viewsets.ModelViewSet):
     """
     ViewSet for viewing and managing photos taken by the FarmBot.
+    
+    Supports cursor-based pagination for efficient handling of large photo libraries.
+    
+    List Parameters:
+    - page_size: Number of results per page (default: 20, max: 100)
+    - cursor: Pagination cursor for next/previous pages
+    
+    Example:
+        GET /api/photos/?page_size=50
+        GET /api/photos/?cursor=cD0yMDIxLTAxLTAxVDAwOjAwOjAwWg%3D%3D
     """
     queryset = Photo.objects.all()
     serializer_class = PhotoModelSerializer
     permission_classes = [AllowAny]
+    pagination_class = PhotoCursorPagination
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset().order_by('-created_at')
+        
+        # Apply pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        
         serializer = self.get_serializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
