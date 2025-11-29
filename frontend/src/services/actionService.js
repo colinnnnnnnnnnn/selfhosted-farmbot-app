@@ -96,3 +96,22 @@ export const dismountTool = async (setMoveStatus = () => {}) => {
     // Don't re-throw - just show the error message
   }
 };
+
+/**
+ * Read soil sensor data.
+ * Returns: { moisture, raw_value }
+ */
+export const readSoilSensor = async (setMoveStatus = () => {}) => {
+  try {
+    setMoveStatus('Reading soil sensor');
+    const response = await axios.get(`${API_BASE}/soil-sensor/`);
+    const { moisture, raw_value } = response.data;
+    setMoveStatus(`Soil: ${moisture}% moisture (raw: ${raw_value})`);
+    return response.data;
+  } catch (error) {
+    console.log('Error reading soil sensor:', error);
+    const errorMsg = error.response?.data?.error || 'Soil sensor read failed';
+    setMoveStatus(errorMsg);
+    // Don't re-throw - just show the error message
+  }
+};

@@ -5,6 +5,7 @@ import { useAuth } from './hooks/useAuth';
 import { useFarmBotPosition } from './hooks/useFarmBotPosition';
 import { usePhotos } from './hooks/usePhotos';
 import ControlButtons from './components/ControlButtons';
+import ActionButtons from './components/ActionButtons';
 import ToolSelector from './components/ToolSelector';
 import PhotoGallery from './components/PhotoGallery';
 import StatusDisplay from './components/StatusDisplay';
@@ -16,7 +17,7 @@ import BotVisibilityToggle from './components/BotVisibilityToggle';
 import LogViewer from './components/LogViewer';
 import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
 import { takePhoto, clearAllPhotos } from './services/photoService';
-import { waterPlant, weed, injectSeed, mountTool, dismountTool } from './services/actionService';
+import { waterPlant, weed, injectSeed, mountTool, dismountTool, readSoilSensor } from './services/actionService';
 
 function App() {
   // Authentication
@@ -160,6 +161,10 @@ function App() {
     await dismountTool(setMoveStatus);
   };
 
+  const handleReadSoilSensor = async () => {
+    await readSoilSensor(setMoveStatus);
+  };
+
   const handleTakePhoto = async () => {
     setPhotoLoading(true);
     try {
@@ -197,9 +202,6 @@ function App() {
           <ControlButtons
             handleGet={handleGet}
             handleUnlock={handleUnlock}
-            handleWaterPlant={handleWaterPlant}
-            handleWeeding={handleWeeding}
-            handleInjectSeed={handleInjectSeed}
             handleHome={handleHome}
             handleTakePhoto={handleTakePhoto}
             handleClearPhotos={handleClearPhotos}
@@ -224,7 +226,7 @@ function App() {
           />
         </div>
 
-  {/* Move sections */}
+  {/* Move sections and Action buttons */}
   <div style={{ flex: '1', display: 'flex', gap: 40, alignItems: 'flex-start' }}>
           <MoveAbsoluteForm
             moveForm={moveForm}
@@ -238,6 +240,13 @@ function App() {
             handleRelInputChange={handleRelInputChange}
             handleMoveRelative={handleMoveRelative}
             loading={loading}
+          />
+
+          <ActionButtons
+            handleWaterPlant={handleWaterPlant}
+            handleWeeding={handleWeeding}
+            handleInjectSeed={handleInjectSeed}
+            handleReadSoilSensor={handleReadSoilSensor}
           />
         </div>
 
