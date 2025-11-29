@@ -2,6 +2,48 @@ import axios from '../utils/axiosConfig';
 import { API_BASE } from '../utils/axiosConfig';
 
 /**
+ * Fetch all photos from the API and load them to the grid
+ */
+export const loadPhotosFromAPI = async (setPhotoData, savePhotos, setMoveStatus) => {
+  try {
+    // Fetch all photos from the API (using pagination if needed)
+    let allPhotos = [];
+    let nextUrl = `${API_BASE}/photos/`;
+    
+    while (nextUrl) {
+      const response = await axios.get(nextUrl);
+      const data = response.data;
+      
+      // Handle paginated response
+      const results = data.results || data;
+      allPhotos = [...allPhotos, ...results];
+      
+      // Check for next page
+      nextUrl = data.next || null;
+    }
+    
+    // Transform API photos to grid format
+    const gridPhotos = allPhotos.map(photo => ({
+      id: photo.id,
+      url: photo.url,
+      farmbot_id: photo.farmbot_id,
+      position: photo.coordinates || { x: 0, y: 0, z: 0 },
+      timestamp: photo.created_at
+    }));
+    
+    setPhotoData(gridPhotos);
+    savePhotos(gridPhotos);
+    
+    setMoveStatus(`Loaded ${gridPhotos.length} photos from gallery`);
+    return gridPhotos;
+  } catch (error) {
+    console.error('Error loading photos from API:', error);
+    setMoveStatus('Error loading photos from gallery');
+    throw error;
+  }
+};
+
+/**
  * Take a photo with the FarmBot camera
  */
 export const takePhoto = async (position, photoData, setPhotoData, savePhotos, setMoveStatus) => {

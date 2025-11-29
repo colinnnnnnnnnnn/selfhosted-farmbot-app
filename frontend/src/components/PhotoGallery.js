@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import axios from '../utils/axiosConfig';
 import { API_BASE } from '../utils/axiosConfig';
@@ -63,7 +63,7 @@ function PhotoGallery({ photos: localPhotos, open, onClose }) {
   const [initialLoad, setInitialLoad] = useState(true);
 
   // Fetch photos from paginated API
-  const fetchPhotos = async (cursor = null) => {
+  const fetchPhotos = useCallback(async (cursor = null) => {
     setLoading(true);
     try {
       const url = cursor 
@@ -95,14 +95,14 @@ function PhotoGallery({ photos: localPhotos, open, onClose }) {
       setLoading(false);
       setInitialLoad(false);
     }
-  };
+  }, [localPhotos]);
 
   // Load photos when gallery opens
   useEffect(() => {
     if (open && initialLoad) {
       fetchPhotos();
     }
-  }, [open, initialLoad]);
+  }, [open, initialLoad, fetchPhotos]);
 
   // Reset when gallery closes
   useEffect(() => {

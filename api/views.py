@@ -152,13 +152,41 @@ class PhotoViewSet(viewsets.ModelViewSet):
 class SequenceViewSet(viewsets.ModelViewSet):
     serializer_class = SequenceSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None  # Disable pagination for sequences
+
+    def _take_photo_with_db_record(self):
+        """Take a photo and create a database record for it"""
+        result = take_photo()
+        if result is None:
+            raise Exception("Could not take photo")
+        
+        # Get current position for photo metadata
+        position = get_position()
+        coordinates = {}
+        if position:
+            coordinates = {
+                'x': position[0],
+                'y': position[1],
+                'z': position[2]
+            }
+
+        # Create photo record
+        Photo.objects.create(
+            image_path=f"farm_images/image_{result['id']}.jpg",
+            farmbot_id=result['id'],
+            coordinates=coordinates,
+            meta_data={
+                'content_type': result['content_type'],
+                'source': 'sequence'
+            }
+        )
+        return result
 
     COMMAND_MAP = {
         'move_absolute': move_absolute,
         'move_relative': move_relative,
         'water_plant': water_plant,
         'dispense': dispense,
-        'take_photo': take_photo,
         'mount_tool': mount_tool,
         'dismount_tool': dismount_tool,
         'emergency_lock': emergency_lock,
@@ -182,6 +210,17 @@ class SequenceViewSet(viewsets.ModelViewSet):
     def execute(self, request, pk=None):
         sequence = self.get_object()
         for step in sequence.steps.all():
+            # Special handling for take_photo to create DB record
+            if step.command == 'take_photo':
+                try:
+                    print(f"Executing command: take_photo with params: {step.parameters}")
+                    self._take_photo_with_db_record()
+                    wait_time = step.parameters.get('wait', 10)
+                    time.sleep(wait_time)
+                    continue
+                except Exception as e:
+                    return Response({'error': f'Failed to execute step {step.order} (take_photo): {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             command_func = self.COMMAND_MAP.get(step.command)
             if not command_func:
                 return Response({'error': f'Unknown command: {step.command}'}, status=status.HTTP_400_BAD_REQUEST)
@@ -189,8 +228,8 @@ class SequenceViewSet(viewsets.ModelViewSet):
             try:
                 print(f"Executing command: {step.command} with params: {step.parameters}")
                 command_func(**step.parameters)
-                # Default wait time, can be overridden by step parameter
-                wait_time = step.parameters.get('wait', 2)
+                # Default wait time between steps (10 seconds), can be overridden by step parameter
+                wait_time = step.parameters.get('wait', 10)
                 time.sleep(wait_time)
             except Exception as e:
                 return Response({'error': f'Failed to execute step {step.order} ({step.command}): {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

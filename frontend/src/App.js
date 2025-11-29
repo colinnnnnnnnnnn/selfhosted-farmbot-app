@@ -6,8 +6,8 @@ import { useFarmBotPosition } from './hooks/useFarmBotPosition';
 import { usePhotos } from './hooks/usePhotos';
 import ControlButtons from './components/ControlButtons';
 import ActionButtons from './components/ActionButtons';
-import ToolSelector from './components/ToolSelector';
 import PhotoGallery from './components/PhotoGallery';
+import SequenceEditor from './components/SequenceEditor';
 import StatusDisplay from './components/StatusDisplay';
 import MoveAbsoluteForm from './components/MoveAbsoluteForm';
 import MoveRelativeForm from './components/MoveRelativeForm';
@@ -16,7 +16,7 @@ import FarmBotMap from './components/FarmBotMap';
 import BotVisibilityToggle from './components/BotVisibilityToggle';
 import LogViewer from './components/LogViewer';
 import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
-import { takePhoto, clearAllPhotos } from './services/photoService';
+import { takePhoto, clearAllPhotos, loadPhotosFromAPI } from './services/photoService';
 import { waterPlant, weed, injectSeed, mountTool, dismountTool, readSoilSensor, activateRotaryTool } from './services/actionService';
 
 function App() {
@@ -38,15 +38,20 @@ function App() {
   
   // UI state
   const [photoLoading, setPhotoLoading] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [botVisible, setBotVisible] = useState(true);
   // Gallery modal state
   const [galleryOpen, setGalleryOpen] = useState(false);
+  // Sequence editor modal state
+  const [sequenceEditorOpen, setSequenceEditorOpen] = useState(false);
   // Tool mounting state
   const [selectedTool, setSelectedTool] = useState('');
 
   // Handlers
   const handleOpenGallery = () => setGalleryOpen(true);
   const handleCloseGallery = () => setGalleryOpen(false);
+  const handleOpenSequenceEditor = () => setSequenceEditorOpen(true);
+  const handleCloseSequenceEditor = () => setSequenceEditorOpen(false);
   const handleLogout = () => {
     authLogout();
     setPhotoData([]);
@@ -182,6 +187,17 @@ function App() {
     await clearAllPhotos(photoData, clearPhotos, setMoveStatus);
   };
 
+  const handleLoadPhotosToGrid = async () => {
+    setLoadingPhotos(true);
+    try {
+      await loadPhotosFromAPI(setPhotoData, savePhotos, setMoveStatus);
+    } catch (error) {
+      console.error('Error loading photos to grid:', error);
+    } finally {
+      setLoadingPhotos(false);
+    }
+  };
+
   const handleHome = async () => {
     await goHome(setPosition, setTargetPosition, setMoveStatus);
   };
@@ -201,7 +217,7 @@ function App() {
       </div>
 
   {/* Top section with controls and move forms */}
-  <div className="dirt-background" style={{ display: 'flex', gap: 20, marginBottom: 20, padding: '15px 20px', alignItems: 'flex-start', minHeight: '160px', maxHeight: '260px', overflow: 'hidden', boxSizing: 'border-box' }}>
+  <div className="dirt-background" style={{ display: 'flex', gap: 20, marginBottom: 20, padding: '15px 20px', alignItems: 'flex-start', minHeight: '200px', maxHeight: '320px', overflow: 'hidden', boxSizing: 'border-box' }}>
         <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start' }}>
           <ControlButtons
             handleGet={handleGet}
@@ -210,18 +226,18 @@ function App() {
             handleTakePhoto={handleTakePhoto}
             handleClearPhotos={handleClearPhotos}
             handleOpenGallery={handleOpenGallery}
+            handleOpenSequenceEditor={handleOpenSequenceEditor}
+            handleLoadPhotosToGrid={handleLoadPhotosToGrid}
             loading={loading}
             photoLoading={photoLoading}
+            loadingPhotos={loadingPhotos}
             photoCount={photoData.length}
-          />
-          <ToolSelector
-            selectedTool={selectedTool}
-            setSelectedTool={setSelectedTool}
-            handleMountTool={handleMountTool}
-            handleDismountTool={handleDismountTool}
           />
   {/* Photo Gallery Modal */}
   <PhotoGallery photos={photoData} open={galleryOpen} onClose={handleCloseGallery} />
+
+  {/* Sequence Editor Modal */}
+  <SequenceEditor open={sequenceEditorOpen} onClose={handleCloseSequenceEditor} setMoveStatus={setMoveStatus} />
 
           <StatusDisplay
             position={position}
@@ -257,6 +273,10 @@ function App() {
             handleInjectSeed={handleInjectSeed}
             handleReadSoilSensor={handleReadSoilSensor}
             handleRotaryTool={handleRotaryTool}
+            selectedTool={selectedTool}
+            setSelectedTool={setSelectedTool}
+            handleMountTool={handleMountTool}
+            handleDismountTool={handleDismountTool}
           />
         </div>
 
