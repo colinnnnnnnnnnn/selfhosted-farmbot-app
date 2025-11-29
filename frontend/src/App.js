@@ -17,7 +17,7 @@ import BotVisibilityToggle from './components/BotVisibilityToggle';
 import LogViewer from './components/LogViewer';
 import { getCurrentPosition, moveAbsolute, moveRelative, nudge, goHome, unlock } from './services/movementService';
 import { takePhoto, clearAllPhotos } from './services/photoService';
-import { waterPlant, weed, injectSeed, mountTool, dismountTool, readSoilSensor } from './services/actionService';
+import { waterPlant, weed, injectSeed, mountTool, dismountTool, readSoilSensor, activateRotaryTool } from './services/actionService';
 
 function App() {
   // Authentication
@@ -165,6 +165,10 @@ function App() {
     await readSoilSensor(setMoveStatus);
   };
 
+  const handleRotaryTool = async () => {
+    await activateRotaryTool({}, setMoveStatus);
+  };
+
   const handleTakePhoto = async () => {
     setPhotoLoading(true);
     try {
@@ -247,6 +251,7 @@ function App() {
             handleWeeding={handleWeeding}
             handleInjectSeed={handleInjectSeed}
             handleReadSoilSensor={handleReadSoilSensor}
+            handleRotaryTool={handleRotaryTool}
           />
         </div>
 

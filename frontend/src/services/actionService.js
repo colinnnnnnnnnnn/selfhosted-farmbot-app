@@ -115,3 +115,27 @@ export const readSoilSensor = async (setMoveStatus = () => {}) => {
     // Don't re-throw - just show the error message
   }
 };
+
+/**
+ * Use rotary tool for operations like weeding or soil working.
+ * speed: percentage 0-100 (default 100)
+ * duration: seconds to run (default 5.0)
+ */
+export const activateRotaryTool = async (
+  { speed = 100, duration = 5.0 } = {},
+  setMoveStatus = () => {}
+) => {
+  try {
+    setMoveStatus('Activating rotary tool');
+    await axios.post(`${API_BASE}/rotary-tool/`, {
+      speed,
+      duration,
+    });
+    setMoveStatus('Rotary tool complete');
+  } catch (error) {
+    console.log('Error using rotary tool:', error);
+    const errorMsg = error.response?.data?.error || 'Rotary tool failed';
+    setMoveStatus(errorMsg);
+    // Don't re-throw - just show the error message
+  }
+};
