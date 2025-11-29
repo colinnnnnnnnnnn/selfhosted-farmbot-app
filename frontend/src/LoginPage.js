@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from './utils/axiosConfig';
 import './App.css';
-
-const API_BASE = 'http://localhost:8000/api';
 
 function LoginPage({ onLogin }) {
   const [formData, setFormData] = useState({

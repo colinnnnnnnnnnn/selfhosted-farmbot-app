@@ -1,4 +1,5 @@
 from farmlib.farmbot import Farmbot
+import logging
 import threading
 import time
 import requests
@@ -10,7 +11,12 @@ from dotenv import load_dotenv
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+
 load_dotenv()
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Global variables
 bot = None
@@ -39,11 +45,11 @@ def increment_photo_counter():
 
 class ConnectHandler:
     def on_connect(self, bot, client):
-        print("Connected to FarmBot!")
+        logger.info("Connected to FarmBot!")
         connection_event.set()
 
     def on_change(self, bot, state):
-        print("State updated")
+        logger.info("State updated")
 
     def on_log(self, bot, log):
         channel_layer = get_channel_layer()
@@ -62,7 +68,7 @@ class ConnectHandler:
                 match = re.search(r"(https?://[^\s]+/rails/active_storage/blobs/redirect/[^\s]+/image_\d+)", message)
                 if match:
                     photo_data['url'] = match.group(1)
-                    print(f"Photo URL: {photo_data['url']}")
+                    logger.info(f"Photo URL: {photo_data['url']}")
                     photo_event.set()
                     return
 
@@ -82,17 +88,17 @@ class ConnectHandler:
                                 url = last.get('attachment_url') or last.get('url')
                                 if url:
                                     photo_data['url'] = url
-                                    print(f"Photo URL: {photo_data['url']}")
+                                    logger.info(f"Photo URL: {photo_data['url']}")
                                     photo_event.set()
                                     return
                 except Exception as e:
-                    print(f"Failed to fetch latest image URL from API: {e}")
+                    logger.error(f"Failed to fetch latest image URL from API: {e}")
 
     def on_error(self, bot, response):
-        print("Error:", response.errors)
+        logger.error(f"Error: {response.errors}")
 
     def on_response(self, bot, response):
-        print("Response:", response.id)
+        logger.info(f"Response: {response.id}")
 
 def connect_bot():
     """Connect to FarmBot in a separate thread"""
@@ -116,13 +122,13 @@ def connect_bot():
         connection_thread.daemon = True
         connection_thread.start()
         if not connection_event.wait(timeout=10):
-            print("Failed to connect to FarmBot")
+            logger.error("Failed to connect to FarmBot")
             bot = None
             bot_token = None
             return False
         return True
     except Exception as e:
-        print(f"Failed to connect: {e}")
+        logger.error(f"Failed to connect: {e}")
         bot = None
         bot_token = None
         return False
@@ -130,14 +136,14 @@ def connect_bot():
 def move_absolute(x, y, z, speed=100):
     """Simple move function that can be called from anywhere"""
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
 
     try:
-        print(f"Moving to ({x}, {y}, {z}) at {speed}% speed")
+        logger.info(f"Moving to ({x}, {y}, {z}) at {speed}% speed")
         return bot.move_absolute(x, y, z, speed)
     except Exception as e:
-        print(f"Error in move_absolute: {e}")
+        logger.error(f"Error in move_absolute: {e}")
         return False
 
 
@@ -145,42 +151,42 @@ def emergency_lock():
     """Trigger emergency lock on the global bot."""
     global bot
     if bot is None:
-        print("Couldn't lock")
+        logger.error("Couldn't lock")
         return False
 
     try:
-        print("Emergency Lock!")
+        logger.info("Emergency Lock!")
         return bot.emergency_lock()
     except Exception as e:
-        print(f"Error in emergency_lock: {e}")
+        logger.error(f"Error in emergency_lock: {e}")
         return False
 
 def emergency_unlock():
     """Trigger emergency unlock on the global bot."""
     global bot
     if bot is None:
-        print("Couldn't unlock")
+        logger.error("Couldn't unlock")
         return False
 
     try:
-        print("Emergency Unlock!")
+        logger.info("Emergency Unlock!")
         return bot.emergency_unlock()
     except Exception as e:
-        print(f"Error in emergency_unlock: {e}")
+        logger.error(f"Error in emergency_unlock: {e}")
         return False
 
 def find_home():
     """Command the global bot to find its home position."""
     global bot
     if bot is None:
-        print("Couldn't find home")
+        logger.error("Couldn't find home")
         return False
 
     try:
-        print("Finding Home!(Initial position)")
+        logger.info("Finding Home!(Initial position)")
         return bot.find_home()
     except Exception as e:
-        print(f"Error in find_home: {e}")
+        logger.error(f"Error in find_home: {e}")
         return False
 
 
@@ -188,77 +194,77 @@ def go_to_home():
     """Move the global bot to its home position."""
     global bot
     if bot is None:
-        print("Couldn't go to home")
+        logger.error("Couldn't go to home")
         return False
 
     try:
-        print("Going to Home!(0,0,0)")
+        logger.info("Going to Home!(0,0,0)")
         return bot.go_to_home()
     except Exception as e:
-        print(f"Error in go_to_home: {e}")
+        logger.error(f"Error in go_to_home: {e}")
         return False
 
 def move_relative(x, y, z, speed=100):
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     try:
-        print(f"Moving relative by ({x}, {y}, {z}) at {speed}% speed")
+        logger.info(f"Moving relative by ({x}, {y}, {z}) at {speed}% speed")
         return bot.move_relative(x, y, z, speed)
     except Exception as e:
-        print(f"Error in move_relative: {e}")
+        logger.error(f"Error in move_relative: {e}")
         return False
 
 def power_off():
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     try:
-        print("Powering off")
+        logger.info("Powering off")
         return bot.power_off()
     except Exception as e:
-        print(f"Error in power_off: {e}")
+        logger.error(f"Error in power_off: {e}")
         return False
 
 def reboot():
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     try:
-        print("Rebooting")
+        logger.info("Rebooting")
         return bot.reboot()
     except Exception as e:
-        print(f"Error in reboot: {e}")
+        logger.error(f"Error in reboot: {e}")
         return False
 
 def servo_angle(pin, angle):
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     try:
-        print(f"Setting servo on pin {pin} to angle {angle}")
+        logger.info(f"Setting servo on pin {pin} to angle {angle}")
         return bot.set_servo_angle(pin, angle)
     except Exception as e:
-        print(f"Error in servo_angle: {e}")
+        logger.error(f"Error in servo_angle: {e}")
         return False
 
 
 def lua_script(lua_string):
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     try:
-        print(f"Executing Lua script: {lua_string}")
+        logger.info(f"Executing Lua script: {lua_string}")
         return bot.lua(lua_string)
     except Exception as e:
-        print(f"Error in lua_script: {e}")
+        logger.error(f"Error in lua_script: {e}")
         return False
 
 
 def get_position():
     """Get current bot position"""
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return None
     return bot.position()
 
@@ -270,7 +276,7 @@ def send_message(message):
     try:
         return bot.send_message(message)
     except Exception as e:
-        print(f"Error in send_message: {e}")
+        logger.error(f"Error in send_message: {e}")
         return False
 
 def verify_tool():
@@ -280,7 +286,7 @@ def verify_tool():
         bool: True if tool is detected, False otherwise
     """
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     
     try:
@@ -289,7 +295,7 @@ def verify_tool():
         result = bot.lua(lua_code)
         return bool(result)
     except Exception as e:
-        print(f"Error verifying tool: {e}")
+        logger.error(f"Error verifying tool: {e}")
         return False
 
 def mount_tool(tool_name):
@@ -301,7 +307,7 @@ def mount_tool(tool_name):
         bool: True if mounting was successful, False otherwise
     """
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     
     try:
@@ -320,21 +326,21 @@ def mount_tool(tool_name):
         tool_exists = bot.lua(lua_code)
         
         if not tool_exists:
-            print(f"Tool '{tool_name}' not found in tools database")
+            logger.error(f"Tool '{tool_name}' not found in tools database")
             return False
             
-        print(f"Mounting {tool_name} tool...")
+        logger.info(f"Mounting {tool_name} tool...")
         lua_code = f"mount_tool(\"{tool_name}\")"
         bot.lua(lua_code)
         
         # Verify tool was mounted successfully
         if not verify_tool():
-            print("Tool mount verification failed - no electrical connection detected")
+            logger.error("Tool mount verification failed - no electrical connection detected")
             return False
             
         return True
     except Exception as e:
-        print(f"Error mounting tool: {e}")
+        logger.error(f"Error mounting tool: {e}")
         return False
 
 def dismount_tool():
@@ -344,27 +350,27 @@ def dismount_tool():
         bool: True if dismounting was successful, False otherwise
     """
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     
     try:
         # Check if there's actually a tool mounted
         if not verify_tool():
-            print("No tool detected - nothing to dismount")
+            logger.info("No tool detected - nothing to dismount")
             return True
             
-        print("Dismounting tool...")
+        logger.info("Dismounting tool...")
         lua_code = "dismount_tool()"
         bot.lua(lua_code)
         
         # Verify tool was actually dismounted
         if verify_tool():
-            print("Tool still detected after dismount attempt")
+            logger.warning("Tool still detected after dismount attempt")
             return False
             
         return True
     except Exception as e:
-        print(f"Error dismounting tool: {e}")
+        logger.error(f"Error dismounting tool: {e}")
         return False
 
 def _water_dispense_params(tool_name=None, pin=None):
@@ -394,7 +400,7 @@ def water_plant(x=6, y=600, z=-340):
         bool: True if watering was successful, False otherwise
     """
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     
     WATER_PIN = 8  # Water pin number
@@ -435,7 +441,7 @@ def water_plant(x=6, y=600, z=-340):
         return True
         
     except Exception as e:
-        print(f"Error during watering: {e}")
+        logger.error(f"Error during watering: {e}")
         # Safety: ensure water is off
         try:
             bot.write_pin(pin_number=WATER_PIN, pin_value=0, pin_mode="digital")
@@ -454,57 +460,59 @@ def dispense(milliliters, tool_name=None, pin=None):
         bool: True if dispensing was successful, False otherwise
     """
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     
     try:
-        print(f"Dispensing {milliliters}ml...")
+        logger.info(f"Dispensing {milliliters}ml...")
         lua_code = f"dispense({milliliters}{_water_dispense_params(tool_name, pin)})"
         bot.lua(lua_code)
         return True
     except Exception as e:
-        print(f"Error dispensing: {e}")
+        logger.error(f"Error dispensing: {e}")
         return False
 
 def take_photo():
-    """Take a photo, download it by integer ID, save and return it."""
+    """Take a photo and get the most recent photo from the FarmBot Web App."""
     if bot is None or not connection_event.is_set():
         if not connect_bot():
-            print("Bot not connected!")
+            logger.error("Bot not connected!")
             return None
 
     try:
         # Trigger camera capture
         bot.take_photo()
 
-        # Give the server time to process the photo to avoid placeholder
+        # Give the server time to process the photo
         time.sleep(10)
 
-        # Load current counter
-        image_id = get_photo_counter()
+        # Get the most recent photo from the API
         latest_url = None
-
-        # Poll API until that specific image ID becomes available
         for _ in range(30):  # ~30s timeout
             try:
                 if api_server and bot_token:
+                    # Get all images and sort by ID to get the most recent one
                     resp = requests.get(
-                        f"{api_server}/api/images/{image_id}",
+                        f"{api_server}/api/images",
                         headers={"Authorization": f"Bearer {bot_token}"},
                         timeout=10
                     )
                     if resp.status_code == 200:
                         data = resp.json()
-                        url = data.get('attachment_url') or data.get('url')
-                        if url:
-                            latest_url = url
-                            break
+                        if isinstance(data, list) and len(data) > 0:
+                            # Sort by ID in descending order and get the first one
+                            latest_image = sorted(data, key=lambda x: x.get('id', 0), reverse=True)[0]
+                            image_id = latest_image.get('id')
+                            url = latest_image.get('attachment_url') or latest_image.get('url')
+                            if url:
+                                latest_url = url
+                                break
             except Exception as e:
-                print(f"Error fetching image {image_id}: {e}")
+                logger.error(f"Error fetching latest image: {e}")
             time.sleep(1)
 
         if not latest_url:
-            print(f"Timeout waiting for image {image_id}")
+            logger.error("Timeout waiting for latest image")
             return None
 
         # Download the image from its signed URL
@@ -517,7 +525,7 @@ def take_photo():
             image_path = os.path.join('farm_images', f'image_{image_id}.jpg')
             with open(image_path, 'wb') as f:
                 f.write(response.content)
-            print(f"Image saved to {image_path}")
+            logger.info(f"Image saved to {image_path}")
 
             # Increment persisted counter after successful save
             increment_photo_counter()
@@ -528,11 +536,11 @@ def take_photo():
                 'id': image_id
             }
         else:
-            print(f"Failed to download image: {response.status_code}")
+            logger.error(f"Failed to download image: {response.status_code}")
             return None
 
     except Exception as e:
-        print(f"Error taking photo: {e}")
+        logger.error(f"Error taking photo: {e}")
         return None
 
 def read_soil_sensor():
@@ -563,7 +571,7 @@ def read_soil_sensor():
             "raw_value": moisture_raw
         }
     except Exception as e:
-        print(f"Error reading soil sensor: {e}")
+        logger.error(f"Error reading soil sensor: {e}")
         return None
 
 def use_seed_injector(seeds_count=1, dispense_time=1.0):
@@ -576,19 +584,19 @@ def use_seed_injector(seeds_count=1, dispense_time=1.0):
         bool: True if successful, False otherwise
     """
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     
     try:
         # First ensure we have the seed injector mounted
         if not verify_tool() or not mount_tool("seed_injector"):
-            print("Failed to mount seed injector")
+            logger.error("Failed to mount seed injector")
             return False
             
         # PIN 10 is typically used for seed injection
         SEED_PIN = 10
         
-        print(f"Dispensing {seeds_count} seeds...")
+        logger.info(f"Dispensing {seeds_count} seeds...")
         
         for i in range(seeds_count):
             # Activate seed injector
@@ -601,7 +609,7 @@ def use_seed_injector(seeds_count=1, dispense_time=1.0):
         
         return True
     except Exception as e:
-        print(f"Error using seed injector: {e}")
+        logger.error(f"Error using seed injector: {e}")
         # Safety: ensure pin is off
         try:
             bot.write_pin(pin_number=SEED_PIN, pin_value=0, pin_mode="digital")
@@ -619,7 +627,7 @@ def use_rotary_tool(speed=100, duration=5.0):
         bool: True if successful, False otherwise
     """
     if bot is None:
-        print("Bot not connected!")
+        logger.error("Bot not connected!")
         return False
     
     try:
