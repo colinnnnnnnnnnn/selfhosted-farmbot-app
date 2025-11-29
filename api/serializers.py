@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.urls import reverse
-from .models import Sequence, Step, Photo
+from .models import Sequence, Step, Photo, NotificationPreference
 
 class PhotoModelSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
@@ -97,3 +97,8 @@ class SequenceSerializer(serializers.ModelSerializer):
             Step.objects.create(sequence=instance, **step_data)
 
         return instance
+
+class NotificationPreferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationPreference
+        fields = ['enabled', 'report_frequency']
