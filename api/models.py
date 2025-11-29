@@ -28,6 +28,19 @@ class Sequence(models.Model):
         return self.name
 
 
+class Step(models.Model):
+    sequence = models.ForeignKey(Sequence, on_delete=models.CASCADE, related_name='steps')
+    command = models.CharField(max_length=100)
+    parameters = models.JSONField(default=dict, blank=True)
+    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f'Step {self.order} - {self.command}'
+
+
 class AuditLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)

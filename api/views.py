@@ -1,7 +1,47 @@
 import os
 import zipfile
 import io
-from .models import AuditLog
+import csv
+import json
+import threading
+import time
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
+
+from rest_framework import status, viewsets
+from rest_framework.decorators import api_view, permission_classes, authentication_classes, action, throttle_classes
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.authtoken.models import Token
+
+from .pagination import PhotoCursorPagination
+
+from .models import AuditLog, Sequence, Step, Photo
+from .serializers import (
+    PositionSerializer, ServoAngleSerializer, MessageSerializer, 
+    LuaScriptSerializer, WateringSerializer, DispensingSerializer,
+    ToolSerializer, SequenceSerializer, SeedInjectorSerializer,
+    RotaryToolSerializer, SoilSensorSerializer, PhotoModelSerializer,
+    WeederSerializer, NotificationPreferenceSerializer
+)
+from farmlib.wrapper import (
+    connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock,
+    find_home, go_to_home, power_off, reboot, servo_angle, lua_script, 
+    get_position, send_message, take_photo, water_plant, mount_tool, 
+    dismount_tool, dispense, use_seed_injector, use_rotary_tool, read_soil_sensor,
+    use_weeder
+)
+
+# Initialize bot connection when server starts
+connection_thread = threading.Thread(target=connect_bot)
+connection_thread.daemon = True
+connection_thread.start()
+
+
 # Export all photos as a ZIP file
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -25,9 +65,8 @@ def export_photos_zip_view(request):
         return response
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-from .models import AuditLog
-import csv
-from django.http import HttpResponse
+
+
 # Export audit logs as CSV
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -62,50 +101,36 @@ def export_auditlog_view(request):
             return response
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, permission_classes, authentication_classes, action, throttle_classes
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
-from rest_framework.authtoken.models import Token
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-import json
-import threading
-import time
-from .models import Sequence, Step, Photo
-from .serializers import (
-    PositionSerializer, ServoAngleSerializer, MessageSerializer, 
-    LuaScriptSerializer, WateringSerializer, DispensingSerializer,
-    ToolSerializer, SequenceSerializer, SeedInjectorSerializer,
-    RotaryToolSerializer, SoilSensorSerializer, PhotoModelSerializer,
-    WeederSerializer, NotificationPreferenceSerializer
-)
-from farmlib.wrapper import (
-    connect_bot, move_absolute, move_relative, emergency_lock, emergency_unlock,
-    find_home, go_to_home, power_off, reboot, servo_angle, lua_script, 
-    get_position, send_message, take_photo, water_plant, mount_tool, 
-    dismount_tool, dispense, use_seed_injector, use_rotary_tool, read_soil_sensor,
-    use_weeder
-)
 
-# Initialize bot connection when server starts
-connection_thread = threading.Thread(target=connect_bot)
-connection_thread.daemon = True
-connection_thread.start()
 
 class PhotoViewSet(viewsets.ModelViewSet):
     """
     ViewSet for viewing and managing photos taken by the FarmBot.
+    
+    Supports cursor-based pagination for efficient handling of large photo libraries.
+    
+    List Parameters:
+    - page_size: Number of results per page (default: 20, max: 100)
+    - cursor: Pagination cursor for next/previous pages
+    
+    Example:
+        GET /api/photos/?page_size=50
+        GET /api/photos/?cursor=cD0yMDIxLTAxLTAxVDAwOjAwOjAwWg%3D%3D
     """
     queryset = Photo.objects.all()
     serializer_class = PhotoModelSerializer
     permission_classes = [AllowAny]
+    pagination_class = PhotoCursorPagination
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset().order_by('-created_at')
+        
+        # Apply pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        
         serializer = self.get_serializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 

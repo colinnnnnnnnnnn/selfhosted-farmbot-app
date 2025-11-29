@@ -1,6 +1,11 @@
 from rest_framework import serializers
 from django.urls import reverse
 from .models import Sequence, Step, Photo, NotificationPreference
+from .validators import (
+    coordinate_validator, speed_validator, depth_validator,
+    volume_validator, pin_validator, angle_validator,
+    lua_script_validator, time_validator, count_validator
+)
 
 class PhotoModelSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
@@ -17,17 +22,38 @@ class PhotoModelSerializer(serializers.ModelSerializer):
         return f'/farm_images/{obj.filename}'
 
 class PositionSerializer(serializers.Serializer):
-    x = serializers.FloatField(required=True)
-    y = serializers.FloatField(required=True)
-    z = serializers.FloatField(required=True)
-    speed = serializers.IntegerField(required=False)
+    """Validates absolute movement coordinates and speed.
+    
+    Expected ranges:
+    - x, y: -100 to 3000 mm
+    - z: -400 to 100 mm (negative is down)
+    - speed: 0-100%
+    """
+    x = serializers.FloatField(required=True, help_text="X coordinate in mm")
+    y = serializers.FloatField(required=True, help_text="Y coordinate in mm")
+    z = serializers.FloatField(required=True, help_text="Z coordinate in mm")
+    speed = serializers.IntegerField(required=False, default=100, validators=[speed_validator])
+    
+    def validate(self, data):
+        coordinate_validator(data)
+        return data
 
 class ServoAngleSerializer(serializers.Serializer):
-    pin = serializers.IntegerField(required=True)
-    angle = serializers.IntegerField(required=True)
+    """Validates servo motor angle control.
+    
+    Pin should be a valid GPIO pin number.
+    Angle: 0-180 degrees.
+    """
+    pin = serializers.IntegerField(required=True, validators=[pin_validator])
+    angle = serializers.IntegerField(required=True, validators=[angle_validator])
 
 class LuaScriptSerializer(serializers.Serializer):
-    lua_string = serializers.CharField(required=True)
+    """Validates Lua script execution.
+    
+    Scripts are sandboxed and forbidden commands (os.execute, etc.) are blocked.
+    Max length: 10000 characters.
+    """
+    lua_string = serializers.CharField(required=True, validators=[lua_script_validator])
 
 class MessageSerializer(serializers.Serializer):
     message = serializers.CharField(required=True)
@@ -36,14 +62,34 @@ class PhotoSerializer(serializers.Serializer):
     url = serializers.URLField(read_only=True)
 
 class WateringSerializer(serializers.Serializer):
-    x = serializers.IntegerField(required=False, default=6)
-    y = serializers.IntegerField(required=False, default=600)
-    z = serializers.IntegerField(required=False, default=-340)
+    """Validates watering operation coordinates.
+    
+    Default values point to typical watering location.
+    """
+    x = serializers.FloatField(required=False, default=6, help_text="X coordinate in mm")
+    y = serializers.FloatField(required=False, default=600, help_text="Y coordinate in mm")
+    z = serializers.FloatField(required=False, default=-340, help_text="Z coordinate in mm")
+    
+    def validate(self, data):
+        coordinate_validator(data)
+        return data
 
 class DispensingSerializer(serializers.Serializer):
-    milliliters = serializers.FloatField(required=True, min_value=0.1)
-    tool_name = serializers.CharField(required=False)
-    pin = serializers.IntegerField(required=False)
+    """Validates liquid dispensing operations.
+    
+    Volume: 0.01-5000 ml
+    Either tool_name or pin must be specified.
+    """
+    milliliters = serializers.FloatField(required=True, validators=[volume_validator])
+    tool_name = serializers.CharField(required=False, allow_blank=False)
+    pin = serializers.IntegerField(required=False, validators=[pin_validator])
+    
+    def validate(self, data):
+        if not data.get('tool_name') and not data.get('pin'):
+            raise serializers.ValidationError(
+                "Either 'tool_name' or 'pin' must be specified"
+            )
+        return data
 
 class ToolSerializer(serializers.Serializer):
     tool_name = serializers.CharField(required=True)
@@ -54,23 +100,43 @@ class StepSerializer(serializers.ModelSerializer):
         fields = ['id', 'command', 'parameters', 'order']
 
 class SeedInjectorSerializer(serializers.Serializer):
-    seeds_count = serializers.IntegerField(required=False, default=1, min_value=1)
-    dispense_time = serializers.FloatField(required=False, default=1.0, min_value=0.1)
+    """Validates seed injection operations.
+    
+    Count: 1-10000 seeds
+    Time: 0.1-3600 seconds per seed
+    """
+    seeds_count = serializers.IntegerField(required=False, default=1, validators=[count_validator])
+    dispense_time = serializers.FloatField(required=False, default=1.0, validators=[time_validator])
 
 class RotaryToolSerializer(serializers.Serializer):
-    speed = serializers.IntegerField(required=False, default=100, min_value=0, max_value=100)
-    duration = serializers.FloatField(required=False, default=5.0, min_value=0.1)
+    """Validates rotary tool operations (weeding, tilling, etc.).
+    
+    Speed: 0-100%
+    Duration: 0.1-3600 seconds
+    """
+    speed = serializers.IntegerField(required=False, default=100, validators=[speed_validator])
+    duration = serializers.FloatField(required=False, default=5.0, validators=[time_validator])
 
 class SoilSensorSerializer(serializers.Serializer):
     moisture = serializers.FloatField(read_only=True)
     raw_value = serializers.IntegerField(read_only=True)
 
 class WeederSerializer(serializers.Serializer):
-    x = serializers.FloatField(required=True)
-    y = serializers.FloatField(required=True)
-    z = serializers.FloatField(required=True)
-    working_depth = serializers.FloatField(required=False, default=-20)
-    speed = serializers.IntegerField(required=False, default=100, min_value=0, max_value=100)
+    """Validates weeding tool operations.
+    
+    Coordinates define weed location.
+    Working depth: -200 to 0 mm (negative = down)
+    Speed: 0-100%
+    """
+    x = serializers.FloatField(required=True, help_text="X coordinate in mm")
+    y = serializers.FloatField(required=True, help_text="Y coordinate in mm")
+    z = serializers.FloatField(required=True, help_text="Z coordinate in mm")
+    working_depth = serializers.FloatField(required=False, default=-20, validators=[depth_validator])
+    speed = serializers.IntegerField(required=False, default=100, validators=[speed_validator])
+    
+    def validate(self, data):
+        coordinate_validator(data)
+        return data
 
 class SequenceSerializer(serializers.ModelSerializer):
     steps = StepSerializer(many=True)
