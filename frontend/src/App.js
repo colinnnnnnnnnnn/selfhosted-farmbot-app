@@ -201,7 +201,7 @@ function App() {
       </div>
 
   {/* Top section with controls and move forms */}
-  <div className="dirt-background" style={{ display: 'flex', gap: 40, marginBottom: 20, padding: '15px 20px', alignItems: 'flex-start', minHeight: '160px', maxHeight: '260px', overflow: 'hidden', boxSizing: 'border-box' }}>
+  <div className="dirt-background" style={{ display: 'flex', gap: 20, marginBottom: 20, padding: '15px 20px', alignItems: 'flex-start', minHeight: '160px', maxHeight: '260px', overflow: 'hidden', boxSizing: 'border-box' }}>
         <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start' }}>
           <ControlButtons
             handleGet={handleGet}
@@ -230,22 +230,27 @@ function App() {
           />
         </div>
 
-  {/* Move sections and Action buttons */}
-  <div style={{ flex: '1', display: 'flex', gap: 40, alignItems: 'flex-start' }}>
+  {/* Move sections */}
+  <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <MoveAbsoluteForm
             moveForm={moveForm}
             handleInputChange={handleInputChange}
             handleMove={handleMove}
             loading={loading}
           />
+        </div>
 
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <MoveRelativeForm
             moveRelForm={moveRelForm}
             handleRelInputChange={handleRelInputChange}
             handleMoveRelative={handleMoveRelative}
             loading={loading}
           />
+        </div>
 
+        {/* Action buttons */}
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <ActionButtons
             handleWaterPlant={handleWaterPlant}
             handleWeeding={handleWeeding}
@@ -256,10 +261,12 @@ function App() {
         </div>
 
         {/* D-pad section */}
-        <ManualJogPad
-          startNudge={startNudge}
-          stopNudge={stopNudge}
-        />
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <ManualJogPad
+            startNudge={startNudge}
+            stopNudge={stopNudge}
+          />
+        </div>
       </div>
 
       {/* Lower section: toggle, grid, and logs in one horizontal flex container */}
