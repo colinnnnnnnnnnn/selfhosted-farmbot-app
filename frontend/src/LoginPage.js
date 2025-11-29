@@ -55,7 +55,14 @@ function LoginPage({ onLogin }) {
       // Notify parent component
       onLogin(token);
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed');
+      // Backend returns errors as object with field names as keys
+      const errData = err.response?.data;
+      if (errData && typeof errData === 'object') {
+        const firstError = Object.values(errData)[0];
+        setError(firstError || 'Registration failed');
+      } else {
+        setError('Registration failed');
+      }
     } finally {
       setLoading(false);
     }
