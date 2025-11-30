@@ -146,6 +146,12 @@ Key considerations include:
 \item Local data collection for site-specific conditions
 \end{itemize}
 
+\subsection{Console Output Stream}
+
+To support real-time diagnostics and improve developer visibility, a dedicated console output stream has been developed. This stream captures device logs, sensor readings, movement reports, and error messages directly from the hardware controller.
+
+The console is integrated with the backend through a WebSocket channel, enabling live monitoring via the web interface. This feature significantly enhances debugging efficiency and facilitates rapid detection of hardware or communication issues.
+
 \section{Visualization and Decision Support}
 
 \subsection{Dashboard Components}
