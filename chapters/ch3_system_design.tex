@@ -230,3 +230,19 @@ The system's computational backbone consists of local real-time controllers mana
 
 \subsection{Maintenance and Support Systems}
 To ensure long-term reliability, the hardware architecture includes comprehensive maintenance support features. These encompass diagnostic tools for system health monitoring, a well-documented spare parts management system, and extensive logging capabilities for tracking system performance and maintenance needs.
+\section{High-Level API and Hardware Control Layer}
+
+A robust Python-based control layer has been developed to simplify interactions with the FarmBot hardware. This API wrapper consolidates low-level device operations into an accessible library and exposes high-level routines for common tasks.
+
+Key features include:
+\begin{itemize}
+  \item Soil moisture sensing using analog pin 59.
+  \item Seed injector control via digital pin 10.
+  \item Rotary tool management through analog pin 11.
+  \item High-level functions for watering routines, weeding sequences, and photo capture.
+  \item Device state queries, movement commands, homing procedures, and emergency handling.
+  \item Automatic retrieval of photo URLs using MQTT event logs with a fallback to API queries.
+\end{itemize}
+
+The hardware control layer integrates cleanly with the Django backend, enabling remote control, automation workflows, and scheduled actions. This abstraction simplifies system development while enforcing safety checks and consistent operation across all hardware modules. Comprehensive unit tests and simulation hooks are provided to validate routines before deployment to physical devices.
+
